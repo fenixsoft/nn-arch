@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>NN-Arch 测试运行器</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+    .test-result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+    .pass { background: #d4edda; color: #155724; }
+    .fail { background: #f8d7da; color: #721c24; }
+    .summary { font-weight: bold; margin-top: 20px; padding: 15px; background: #e2e3e5; }
+  </style>
+</head>
+<body>
+  <h1>NN-Arch 单元测试</h1>
+  <div id="results"></div>
+  <div id="summary" class="summary"></div>
+
+  <script src="../lib/js-yaml.min.js"></script>
+  <script>
+    let passed = 0, failed = 0;
+    const resultsDiv = document.getElementById('results');
+    const summaryDiv = document.getElementById('summary');
+
+    function test(name, fn) {
+      try {
+        fn();
+        passed++;
+        resultsDiv.innerHTML += `<div class="test-result pass">✓ ${name}</div>`;
+      } catch (e) {
+        failed++;
+        resultsDiv.innerHTML += `<div class="test-result fail">✗ ${name}<br><small>${e.message}</small></div>`;
+      }
+    }
+
+    function assertEqual(actual, expected, msg) {
+      if (actual !== expected) {
+        throw new Error(`${msg}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+      }
+    }
+
+    function assertDeepEqual(actual, expected, msg) {
+      const a = JSON.stringify(actual);
+      const b = JSON.stringify(expected);
+      if (a !== b) {
+        throw new Error(`${msg}: expected ${b}, got ${a}`);
+      }
+    }
+
+    function finish() {
+      summaryDiv.innerHTML = `总计: ${passed + failed} 测试, ${passed} 通过, ${failed} 失败`;
+    }
+  </script>
+
+  <!-- 测试文件将在这里引入 -->
+  <script src="test-parser.js"></script>
+  <script src="test-layout.js"></script>
+  <script src="test-svg.js"></script>
+  <script>finish();</script>
+</body>
+</html>
