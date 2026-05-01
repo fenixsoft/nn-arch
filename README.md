@@ -2,6 +2,10 @@
 
 一个纯前端的神经网络架构可视化工具，输入 YAML 格式的网络定义，生成美观的 SVG 架构图。
 
+## 效果展示
+
+![AlexNet 架构图](assets/alexnet.svg)
+
 ## 功能特性
 
 - ✅ 支持多种层类型：Input、Conv、Pool、FC、Output、Embedding、Attention 等

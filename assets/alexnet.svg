@@ -1,0 +1,66 @@
+<svg viewBox="0 0 1557 843.8000000000001" width="4671" height="2531" xmlns="http://www.w3.org/2000/svg">
+
+  <defs>
+    <marker id="arrowhead" markerWidth="7.2" markerHeight="5.4" refX="6.3" refY="2.7" orient="auto">
+      <polygon points="0 0, 7.2 2.7, 0 5.4" fill="#999"/>
+    </marker>
+  </defs>
+<rect width="1557" height="843.8000000000001" fill="#ffffff"/>
+<text x="778.5" y="54" text-anchor="middle" font-size="36" font-weight="bold" font-family="Arial, sans-serif" fill="#333">AlexNet 网络架构（5卷积层+3全连接层）</text>
+<rect x="36" y="81" width="1485" height="383.9" fill="none" stroke="#b8d8e8" stroke-width="3.6" stroke-dasharray="9,9" rx="18"/>
+<text x="778.5" y="108.7" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#5a7d9a">特征提取器（Feature Extractor）</text>
+<rect x="36" y="551.9" width="999" height="210.9000000000001" fill="none" stroke="#b8e8c8" stroke-width="3.6" stroke-dasharray="9,9" rx="18"/>
+<text x="535.5" y="579.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#5a7d9a">分类器（Classifier）</text>
+
+<rect x="63" y="138.9" width="216" height="126" fill="#fff8f0" stroke="#f0a559" stroke-width="3.6" rx="14.4"/>
+<text x="171" y="176.1" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Input</text><text x="171" y="209.7" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">224x224x3</text>
+
+<rect x="306" y="138.9" width="216" height="126" fill="#e8f4f8" stroke="#5ba5d9" stroke-width="3.6" rx="14.4"/>
+<text x="414" y="176.1" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Conv1</text><text x="414" y="209.7" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">k=11, s=4</text><text x="414" y="231.29999999999998" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">55x55x96</text><text x="414" y="252.89999999999998" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#27ae60">ReLU</text>
+
+<rect x="549" y="138.9" width="216" height="126" fill="#f0e8f8" stroke="#a559f0" stroke-width="3.6" rx="14.4"/>
+<text x="657" y="176.1" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Pool1</text><text x="657" y="209.7" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">k=3, s=2</text><text x="657" y="231.29999999999998" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">27x27x96</text>
+
+<rect x="792" y="138.9" width="216" height="126" fill="#e8f4f8" stroke="#5ba5d9" stroke-width="3.6" rx="14.4"/>
+<text x="900" y="176.1" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Conv2</text><text x="900" y="209.7" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">k=5, s=1</text><text x="900" y="231.29999999999998" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">27x27x256</text><text x="900" y="252.89999999999998" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#27ae60">ReLU</text>
+
+<rect x="1035" y="138.9" width="216" height="126" fill="#f0e8f8" stroke="#a559f0" stroke-width="3.6" rx="14.4"/>
+<text x="1143" y="176.1" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Pool2</text><text x="1143" y="209.7" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">k=3, s=2</text><text x="1143" y="231.29999999999998" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">13x13x256</text>
+
+<rect x="1278" y="138.9" width="216" height="126" fill="#e8f4f8" stroke="#5ba5d9" stroke-width="3.6" rx="14.4"/>
+<text x="1386" y="176.1" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Conv3</text><text x="1386" y="209.7" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">k=3, s=1</text><text x="1386" y="231.29999999999998" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">13x13x384</text><text x="1386" y="252.89999999999998" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#27ae60">ReLU</text>
+
+<rect x="63" y="311.9" width="216" height="126" fill="#e8f4f8" stroke="#5ba5d9" stroke-width="3.6" rx="14.4"/>
+<text x="171" y="349.09999999999997" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Conv4</text><text x="171" y="382.7" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">k=3, s=1</text><text x="171" y="404.3" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">13x13x384</text><text x="171" y="425.90000000000003" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#27ae60">ReLU</text>
+
+<rect x="306" y="311.9" width="216" height="126" fill="#e8f4f8" stroke="#5ba5d9" stroke-width="3.6" rx="14.4"/>
+<text x="414" y="349.09999999999997" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Conv5</text><text x="414" y="382.7" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">k=3, s=1</text><text x="414" y="404.3" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">13x13x256</text><text x="414" y="425.90000000000003" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#27ae60">ReLU</text>
+
+<rect x="549" y="311.9" width="216" height="126" fill="#f0e8f8" stroke="#a559f0" stroke-width="3.6" rx="14.4"/>
+<text x="657" y="349.09999999999997" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Pool5</text><text x="657" y="382.7" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">k=3, s=2</text><text x="657" y="404.3" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">6x6x256</text>
+
+<rect x="63" y="609.8000000000001" width="216" height="126" fill="#e8f8f0" stroke="#5bd9a5" stroke-width="3.6" rx="14.4"/>
+<text x="171" y="647.0000000000001" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">FC1+Dropout</text><text x="171" y="680.6000000000001" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">4096</text><text x="171" y="702.2000000000002" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#d9a55b">+Dropout</text><text x="171" y="723.8000000000002" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#27ae60">ReLU</text>
+
+<rect x="306" y="609.8000000000001" width="216" height="126" fill="#e8f8f0" stroke="#5bd9a5" stroke-width="3.6" rx="14.4"/>
+<text x="414" y="647.0000000000001" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">FC2+Dropout</text><text x="414" y="680.6000000000001" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">4096</text><text x="414" y="702.2000000000002" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#d9a55b">+Dropout</text><text x="414" y="723.8000000000002" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#27ae60">ReLU</text>
+
+<rect x="549" y="609.8000000000001" width="216" height="126" fill="#e8f8f0" stroke="#5bd9a5" stroke-width="3.6" rx="14.4"/>
+<text x="657" y="647.0000000000001" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">FC3</text><text x="657" y="680.6000000000001" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">1000</text>
+
+<rect x="792" y="609.8000000000001" width="216" height="126" fill="#ffe8e8" stroke="#f5a5a5" stroke-width="3.6" rx="14.4"/>
+<text x="900" y="647.0000000000001" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Output</text><text x="900" y="680.6000000000001" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">1000 类</text><text x="900" y="702.2000000000002" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#27ae60">Softmax</text>
+<path d="M279 201.9 L306 201.9" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M522 201.9 L549 201.9" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M765 201.9 L792 201.9" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M1008 201.9 L1035 201.9" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M1251 201.9 L1278 201.9" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M279 374.9 L306 374.9" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M522 374.9 L549 374.9" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M279 672.8000000000001 L306 672.8000000000001" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M522 672.8000000000001 L549 672.8000000000001" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M765 672.8000000000001 L792 672.8000000000001" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M1386 264.9 L1386 288.4 L171 288.4 L171 311.9" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M657 437.9 L657 494.9 L535.5 494.9 L535.5 551.9" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<text x="684" y="494.9" text-anchor="start" font-size="21.6" font-family="Arial, sans-serif" fill="#666">Flatten: 9216</text>
+</svg>
