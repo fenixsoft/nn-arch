@@ -3,10 +3,14 @@
  * 将 YAML 文本转换为结构化的网络定义对象
  */
 
-// Node.js 环境导入 js-yaml
+// 获取 js-yaml 库（Node.js 导入或浏览器全局变量）
 let jsyaml;
 if (typeof require !== 'undefined') {
   jsyaml = require('js-yaml');
+} else if (typeof window !== 'undefined' && window.jsyaml) {
+  jsyaml = window.jsyaml;
+} else if (typeof globalThis !== 'undefined' && globalThis.jsyaml) {
+  jsyaml = globalThis.jsyaml;
 }
 
 // 导出给浏览器和 Node.js 使用

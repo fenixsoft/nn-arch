@@ -3,11 +3,16 @@
  * 外部调用 API
  */
 
-// Node.js 环境导入依赖
-const { parseNetworkYaml } = require('./parser.js');
-const { calculateLayout } = require('./layout.js');
-const { generateSvg } = require('./svg-generator.js');
-const { getTemplate, getTemplateList } = require('./templates.js');
+// Node.js 环境导入依赖，浏览器环境依赖通过 script 标签引入
+let parseNetworkYaml, calculateLayout, generateSvg, getTemplate, getTemplateList;
+
+if (typeof require !== 'undefined') {
+  parseNetworkYaml = require('./parser.js').parseNetworkYaml;
+  calculateLayout = require('./layout.js').calculateLayout;
+  generateSvg = require('./svg-generator.js').generateSvg;
+  getTemplate = require('./templates.js').getTemplate;
+  getTemplateList = require('./templates.js').getTemplateList;
+}
 
 const NNArch = {
   /**
@@ -101,7 +106,7 @@ const NNArch = {
   /**
    * 版本信息
    */
-  version: '1.0.2'
+  version: '1.0.3'
 };
 
 // 导出模块（支持 Node.js 和浏览器）
