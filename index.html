@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>神经网络架构可视化工具</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>神经网络架构可视化工具</h1>
+      <button id="downloadBtn" class="download-btn" disabled>下载 SVG</button>
+    </header>
+
+    <main class="main">
+      <div class="editor-panel">
+        <label for="yamlInput">YAML 编辑器</label>
+        <textarea id="yamlInput" placeholder="输入 YAML 格式的网络定义..."></textarea>
+      </div>
+
+      <div class="preview-panel">
+        <label>SVG 预览</label>
+        <div id="svgPreview" class="svg-preview">
+          <p class="placeholder-text">输入 YAML 后点击"生成 SVG"</p>
+        </div>
+        <div id="errorMsg" class="error-msg"></div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <button id="generateBtn" class="action-btn primary">生成 SVG</button>
+      <button id="clearBtn" class="action-btn">清空</button>
+      <div class="template-select">
+        <label for="templateDropdown">模板选择:</label>
+        <select id="templateDropdown">
+          <option value="">-- 选择模板 --</option>
+          <option value="alexnet">AlexNet</option>
+          <option value="vgg16">VGG16</option>
+          <option value="resnet18">ResNet18</option>
+          <option value="transformer">Transformer Encoder</option>
+        </select>
+      </div>
+    </footer>
+  </div>
+
+  <script src="lib/js-yaml.min.js"></script>
+  <script src="parser.js"></script>
+  <script src="layout.js"></script>
+  <script src="svg-generator.js"></script>
+  <script src="templates.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
