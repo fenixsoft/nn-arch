@@ -54,3 +54,39 @@ layers:
   assertEqual(fc.size, 4096, 'fc size');
   assertEqual(fc.dropout, true, 'dropout');
 });
+
+test('解析 sections 分组', function() {
+  const yaml = `
+name: TestNet
+sections:
+  - name: 特征提取器
+    layers: [Input, Conv1, Conv2]
+  - name: 分类器
+    layers: [FC1, Output]
+layers:
+  - {name: Input, type: input, size: "224x224x3"}
+  - {name: Conv1, type: conv, kernel: 3, channels: 64}
+  - {name: Conv2, type: conv, kernel: 3, channels: 64}
+  - {name: FC1, type: fc, size: 1000}
+  - {name: Output, type: output, size: 10}
+`;
+  const result = parseNetworkYaml(yaml);
+  assertEqual(result.sections.length, 2, 'sections 数量');
+  assertEqual(result.sections[0].name, '特征提取器', '第一个 section 名称');
+  assertDeepEqual(result.sections[0].layers, ['Input', 'Conv1', 'Conv2'], '第一个 section 层列表');
+});
+
+test('生成顺序连接', function() {
+  const yaml = `
+layers:
+  - {name: A, type: input, size: "10"}
+  - {name: B, type: conv, kernel: 3, channels: 64}
+  - {name: C, type: output, size: 10}
+`;
+  const result = parseNetworkYaml(yaml);
+  assertEqual(result.connections.length, 2, '连接数量');
+  assertEqual(result.connections[0].from, 'A', '第一个连接起点');
+  assertEqual(result.connections[0].to, 'B', '第一个连接终点');
+  assertEqual(result.connections[1].from, 'B', '第二个连接起点');
+  assertEqual(result.connections[1].to, 'C', '第二个连接终点');
+});

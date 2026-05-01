@@ -3,6 +3,11 @@
  * 将 YAML 文本转换为结构化的网络定义对象
  */
 
+// 导出给浏览器和 Node.js 使用
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { parseNetworkYaml };
+}
+
 /**
  * 解析 YAML 网络定义
  * @param {string} yamlText - YAML 格式的网络定义文本
