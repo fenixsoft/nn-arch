@@ -1,19 +1,13 @@
 /**
  * nn-arch.js - 神经网络架构可视化工具
  * 外部调用 API
- *
- * 使用方式：
- * 1. 引入依赖文件：
- *    <script src="lib/js-yaml.min.js"></script>
- *    <script src="parser.js"></script>
- *    <script src="layout.js"></script>
- *    <script src="svg-generator.js"></script>
- *    <script src="nn-arch.js"></script>
- *
- * 2. 调用函数：
- *    const svg = NNArch.generateFromYaml(yamlText);
- *    document.getElementById('container').innerHTML = svg;
  */
+
+// Node.js 环境导入依赖
+const { parseNetworkYaml } = require('./parser.js');
+const { calculateLayout } = require('./layout.js');
+const { generateSvg } = require('./svg-generator.js');
+const { getTemplate, getTemplateList } = require('./templates.js');
 
 const NNArch = {
   /**
@@ -107,7 +101,7 @@ const NNArch = {
   /**
    * 版本信息
    */
-  version: '1.0.0'
+  version: '1.0.1'
 };
 
 // 导出模块（支持 Node.js 和浏览器）
