@@ -18,15 +18,16 @@ const COLORS = {
   identity: { fill: '#f8f8f8', stroke: '#999999' }
 };
 
-// 样式配置
+// 样式配置（放大 250%）
 const SVG_CONFIG = {
-  fontSizeName: 8.4,
-  fontSizeDetail: 7.2,
-  fontSizeTitle: 12,
-  fontSizeSection: 8.4,
-  cornerRadius: 4.8,
-  strokeWidth: 1.2,
-  arrowWidth: 0.9
+  fontSizeName: 21,      // 8.4 * 2.5
+  fontSizeDetail: 18,    // 7.2 * 2.5
+  fontSizeTitle: 30,     // 12 * 2.5
+  fontSizeSection: 21,   // 8.4 * 2.5
+  cornerRadius: 12,      // 4.8 * 2.5
+  strokeWidth: 3,        // 1.2 * 2.5
+  arrowWidth: 2.25,      // 0.9 * 2.5
+  scale: 2.5             // 显示放大倍数
 };
 
 /**
@@ -36,9 +37,14 @@ const SVG_CONFIG = {
  */
 function generateSvg(layout) {
   const svgParts = [];
+  const scale = SVG_CONFIG.scale;
 
-  // SVG 开头
-  svgParts.push(`<svg viewBox="0 0 ${layout.width} ${layout.height}" width="${layout.width}" height="${layout.height}" xmlns="http://www.w3.org/2000/svg">`);
+  // 计算显示尺寸（放大 250%）
+  const displayWidth = Math.round(layout.width * scale);
+  const displayHeight = Math.round(layout.height * scale);
+
+  // SVG 开头：viewBox 保持原始尺寸，width/height 放大
+  svgParts.push(`<svg viewBox="0 0 ${layout.width} ${layout.height}" width="${displayWidth}" height="${displayHeight}" xmlns="http://www.w3.org/2000/svg">`);
 
   // 定义区：箭头标记和样式
   svgParts.push(generateDefs());
@@ -64,6 +70,11 @@ function generateSvg(layout) {
     svgParts.push(generateConnection(conn));
   });
 
+  // 行间连接（带标注）
+  layout.rowConnections.forEach(conn => {
+    svgParts.push(generateRowConnection(conn));
+  });
+
   // SVG 结尾
   svgParts.push('</svg>');
 
@@ -74,10 +85,11 @@ function generateSvg(layout) {
  * 生成定义区（defs）
  */
 function generateDefs() {
+  const arrowScale = SVG_CONFIG.scale;
   return `
   <defs>
-    <marker id="arrowhead" markerWidth="4.8" markerHeight="3.6" refX="4.2" refY="1.8" orient="auto">
-      <polygon points="0 0, 4.8 1.8, 0 3.6" fill="#999"/>
+    <marker id="arrowhead" markerWidth="${4.8 * arrowScale}" markerHeight="${3.6 * arrowScale}" refX="${4.2 * arrowScale}" refY="${1.8 * arrowScale}" orient="auto">
+      <polygon points="0 0, ${4.8 * arrowScale} ${1.8 * arrowScale}, 0 ${3.6 * arrowScale}" fill="#999"/>
     </marker>
   </defs>`;
 }
@@ -93,8 +105,10 @@ function generateTitle(title) {
  * 生成 section 区域框
  */
 function generateSection(section) {
-  return `<rect x="${section.x}" y="${section.y}" width="${section.width}" height="${section.height}" fill="none" stroke="#b8d8e8" stroke-width="1.2" stroke-dasharray="3,3" rx="6"/>
-<text x="${section.x + section.width / 2}" y="${section.y + SVG_CONFIG.fontSizeSection}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeSection}" font-family="Arial, sans-serif" fill="#5a7d9a">${section.name}</text>`;
+  const strokeColor = section.strokeColor || '#b8d8e8';
+  const titleY = section.titleY || (section.y + SVG_CONFIG.fontSizeSection);
+  return `<rect x="${section.x}" y="${section.y}" width="${section.width}" height="${section.height}" fill="none" stroke="${strokeColor}" stroke-width="${SVG_CONFIG.strokeWidth}" stroke-dasharray="${7.5},${7.5}" rx="${SVG_CONFIG.cornerRadius * 1.25}"/>
+<text x="${section.x + section.width / 2}" y="${titleY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeSection}" font-family="Arial, sans-serif" fill="#5a7d9a">${section.name}</text>`;
 }
 
 /**
@@ -117,11 +131,11 @@ function generateLayerContent(layer) {
   const data = layer.data;
 
   // 层名称
-  const nameY = layer.y + 9;
+  const nameY = layer.y + SVG_CONFIG.fontSizeName + 3;
   let content = `<text x="${centerX}" y="${nameY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeName}" font-weight="bold" font-family="Arial, sans-serif" fill="#333">${layer.name}</text>`;
 
   // 参数详情
-  const detailY = layer.y + 21;
+  const detailY = nameY + SVG_CONFIG.fontSizeDetail + 3;
   const detail = getLayerDetail(layer);
   if (detail) {
     content += `<text x="${centerX}" y="${detailY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#666">${detail}</text>`;
@@ -129,13 +143,13 @@ function generateLayerContent(layer) {
 
   // 输出尺寸
   if (data.out) {
-    const outY = layer.y + 30;
+    const outY = detailY + SVG_CONFIG.fontSizeDetail;
     content += `<text x="${centerX}" y="${outY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#666">${data.out}</text>`;
   }
 
   // 激活函数
   if (data.act) {
-    const actY = layer.y + 37.8;
+    const actY = (data.out ? detailY + SVG_CONFIG.fontSizeDetail * 2 : detailY + SVG_CONFIG.fontSizeDetail);
     content += `<text x="${centerX}" y="${actY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#27ae60">${data.act}</text>`;
   }
 
@@ -174,8 +188,20 @@ function generateConnection(conn) {
   if (conn.type === 'sequential') {
     return `<path d="M${conn.x1} ${conn.y1} L${conn.x2} ${conn.y2}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`;
   }
-  // 其他类型连接（曲线等）将在后续任务实现
   return '';
+}
+
+/**
+ * 生成行间连接（带标注）
+ */
+function generateRowConnection(conn) {
+  // 垂直连线
+  const path = `<path d="M${conn.x1} ${conn.y1} L${conn.x2} ${conn.y2}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`;
+
+  // 标注文本
+  const label = `<text x="${conn.labelX}" y="${conn.labelY}" text-anchor="start" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#666">${conn.label}</text>`;
+
+  return path + '\n' + label;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -187,6 +213,7 @@ if (typeof module !== 'undefined' && module.exports) {
     generateLayer,
     generateLayerContent,
     generateConnection,
+    generateRowConnection,
     getLayerDetail,
     COLORS,
     SVG_CONFIG

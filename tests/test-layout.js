@@ -18,14 +18,14 @@ test('计算简单网络层位置（水平布局）', function() {
   const layout = calculateLayout(network);
   assertEqual(layout.layers.length, 3, '布局层数量');
 
-  // 检查第一层位置
+  // 检查第一层位置（放大 250%）
   const layerA = layout.layers.find(l => l.name === 'A');
-  assertEqual(layerA.x, 21, 'A 层 x 坐标');
-  assertEqual(layerA.y, 27, 'A 层 y 坐标');
+  assertEqual(layerA.x, 52.5, 'A 层 x 坐标');
+  assertEqual(layerA.y, 67.5, 'A 层 y 坐标');
 
-  // 检查层间距
+  // 检查层间距（180 宽度 + 22.5 间距 = 202.5）
   const layerB = layout.layers.find(l => l.name === 'B');
-  assertEqual(layerB.x - layerA.x, 81, 'A-B 层间距（72宽度 + 9间距）');
+  assertEqual(layerB.x - layerA.x, 202.5, 'A-B 层间距');
 });
 
 test('计算垂直布局', function() {
@@ -52,8 +52,8 @@ test('计算垂直布局', function() {
   // 垂直布局应该有相同的 x 坐标
   assertEqual(layerInput.x, layerHidden.x, '垂直布局 x 坐标相同');
 
-  // y 坐标应该有间距
-  assertEqual(layerHidden.y - layerInput.y, 51, '垂直布局层间距（42高度 + 9间距）');
+  // y 坐标应该有间距（105 高度 + 22.5 间距 = 127.5）
+  assertEqual(layerHidden.y - layerInput.y, 127.5, '垂直布局层间距');
 });
 
 test('计算垂直布局层位置', function() {
@@ -76,9 +76,9 @@ test('计算垂直布局层位置', function() {
   const layerB = layout.layers.find(l => l.name === 'B');
 
   // 垂直布局中，x 坐标相同，y 坐标递增
-  assertEqual(layerA.x, 21, 'A 层 x 坐标');
-  assertEqual(layerB.x, 21, 'B 层 x 坐标（垂直布局 x 相同）');
-  assertEqual(layerB.y - layerA.y, 51, 'A-B 层间距（42高度 + 9间距）');
+  assertEqual(layerA.x, 52.5, 'A 层 x 坐标');
+  assertEqual(layerB.x, 52.5, 'B 层 x 坐标（垂直布局 x 相同）');
+  assertEqual(layerB.y - layerA.y, 127.5, 'A-B 层间距');
 });
 
 test('计算连接箭头位置（水平布局）', function() {
@@ -103,9 +103,10 @@ test('计算连接箭头位置（水平布局）', function() {
   assertEqual(conn.to, 'B', '连接终点层');
   assertEqual(conn.type, 'sequential', '连接类型');
 
-  // 箭头起点在 A 层右侧中间
-  assertEqual(conn.x1, 93, '箭头起点 x'); // 21 + 72
-  assertEqual(conn.y1, 48, '箭头起点 y'); // 27 + 42/2
+  // 箭头起点在 A 层右侧中间（52.5 + 180 = 232.5）
+  assertEqual(conn.x1, 232.5, '箭头起点 x');
+  // 箭头起点 y（67.5 + 105/2 = 120）
+  assertEqual(conn.y1, 120, '箭头起点 y');
 });
 
 test('计算布局总尺寸', function() {
@@ -126,12 +127,12 @@ test('计算布局总尺寸', function() {
   const layout = calculateLayout(network);
 
   // 总宽度 = startX + 3层 + 2间距 + startX
-  // = 21 + 3*72 + 2*9 + 21 = 276
-  assertEqual(layout.width, 276, '总宽度');
+  // = 52.5 + 3*180 + 2*22.5 + 52.5 = 690
+  assertEqual(layout.width, 690, '总宽度');
 
   // 总高度 = startY + 层高度 + startY
-  // = 27 + 42 + 27 = 96
-  assertEqual(layout.height, 96, '总高度');
+  // = 67.5 + 105 + 67.5 = 240
+  assertEqual(layout.height, 240, '总高度');
 });
 
 test('处理空网络', function() {
@@ -151,14 +152,15 @@ test('处理空网络', function() {
 });
 
 test('布局配置常量正确', function() {
-  assertEqual(LAYOUT_CONFIG.layerWidth, 72, '层宽度');
-  assertEqual(LAYOUT_CONFIG.layerHeight, 42, '层高度');
-  assertEqual(LAYOUT_CONFIG.layerGap, 9, '层间距');
-  assertEqual(LAYOUT_CONFIG.startX, 21, '起始 X 坐标');
-  assertEqual(LAYOUT_CONFIG.startY, 27, '起始 Y 坐标');
+  // 放大 250% 后的值
+  assertEqual(LAYOUT_CONFIG.layerWidth, 180, '层宽度');
+  assertEqual(LAYOUT_CONFIG.layerHeight, 105, '层高度');
+  assertEqual(LAYOUT_CONFIG.layerGap, 22.5, '层间距');
+  assertEqual(LAYOUT_CONFIG.startX, 52.5, '起始 X 坐标');
+  assertEqual(LAYOUT_CONFIG.startY, 67.5, '起始 Y 坐标');
 });
 
-test('计算 sections 分组区域位置', function() {
+test('计算 sections 分组区域位置（换行布局）', function() {
   const network = {
     name: 'TestNet',
     layout: 'horizontal',
@@ -181,16 +183,18 @@ test('计算 sections 分组区域位置', function() {
   const layout = calculateLayout(network);
   assertEqual(layout.sections.length, 2, 'sections 数量');
 
-  // 第一个 section 应包含 Input, Conv1, Conv2
+  // 有 sections 时会换行布局
   const section1 = layout.sections[0];
   assertEqual(section1.name, '特征提取器', 'section 名称');
-  assertEqual(section1.x, 12, 'section x 起点'); // 21 - 9 (padding)
-  assertEqual(section1.y, 17, 'section y 起点'); // titleBottom (17)
+  assertEqual(section1.x, 30, 'section x 起点'); // 52.5 - 22.5 (padding)
+
+  // 验证行间连接存在
+  assertEqual(layout.rowConnections.length, 1, '行间连接数量');
 });
 
 // === 模板布局测试 ===
 
-test('计算 VGG16 模板布局', function() {
+test('计算 VGG16 模板布局（换行）', function() {
   const vgg16Yaml = `name: VGG16
 layout: horizontal
 
@@ -229,16 +233,14 @@ layers:
   const layout = calculateLayout(network);
 
   assertEqual(layout.layers.length, 23, 'VGG16 布局层数量');
-  assertEqual(layout.connections.length, 22, 'VGG16 布局连接数量');
   assertEqual(layout.sections.length, 2, 'VGG16 sections 分组数量');
 
   // 验证所有层都有有效坐标
   const allLayersHaveCoords = layout.layers.every(l => l.x >= 0 && l.y >= 0);
   assertEqual(allLayersHaveCoords, true, 'VGG16 所有层都有有效坐标');
 
-  // 验证总尺寸合理（23层 * 72宽度 + 22间距 + 边距）
-  const expectedMinWidth = 21 + 23 * 72 + 22 * 9 + 21;
-  assertEqual(layout.width >= expectedMinWidth, true, 'VGG16 总宽度足够');
+  // 验证行间连接存在（特征提取器 -> 分类器）
+  assertEqual(layout.rowConnections.length, 1, 'VGG16 行间连接数量');
 });
 
 test('计算 ResNet18 模板布局', function() {
@@ -272,10 +274,10 @@ layers_after_blocks:
   assertEqual(layout.layers.length, 3, 'ResNet18 初始层布局数量');
   assertEqual(layout.connections.length, 2, 'ResNet18 初始层连接数量');
 
-  // 验证初始层坐标
+  // 验证初始层坐标（放大 250%）
   const inputLayer = layout.layers.find(l => l.name === 'Input');
   assertEqual(inputLayer !== undefined, true, 'ResNet18 Input 层存在');
-  assertEqual(inputLayer.x, 21, 'ResNet18 Input 层 x 坐标');
+  assertEqual(inputLayer.x, 52.5, 'ResNet18 Input 层 x 坐标');
 });
 
 test('计算 Transformer 模板布局', function() {
