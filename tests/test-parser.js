@@ -114,3 +114,39 @@ blocks:
   assertEqual(block.skip, 'identity', 'skip 类型');
   assertEqual(block.merge, 'add', 'merge 类型');
 });
+
+test('解析并行块', function() {
+  const yaml = `
+blocks:
+  - name: MultiHead
+    type: parallel
+    branches:
+      - {name: Q, type: fc, size: 64}
+      - {name: K, type: fc, size: 64}
+      - {name: V, type: fc, size: 64}
+    merge: concat
+`;
+  const result = parseNetworkYaml(yaml);
+  const block = result.blocks[0];
+  assertEqual(block.type, 'parallel', 'block 类型');
+  assertEqual(block.branches.length, 3, '分支数量');
+  assertEqual(block.branches[0].name, 'Q', '第一个分支名称');
+  assertEqual(block.merge, 'concat', 'merge 类型');
+});
+
+test('解析重复块（stack）', function() {
+  const yaml = `
+blocks:
+  - name: EncoderBlock
+    type: stack
+    repeat: 6
+    layers:
+      - {name: FF1, type: fc, size: 2048}
+      - {name: FF2, type: fc, size: 512}
+`;
+  const result = parseNetworkYaml(yaml);
+  const block = result.blocks[0];
+  assertEqual(block.type, 'stack', 'block 类型');
+  assertEqual(block.repeat, 6, '重复次数');
+  assertEqual(block.layers.length, 2, '内部层数量');
+});
