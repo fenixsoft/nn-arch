@@ -38,6 +38,11 @@ function parseNetworkYaml(yamlText) {
     network.layersAfterBlocks = parsed.layers_after_blocks.map(layer => normalizeLayer(layer));
   }
 
+  // 解析 blocks
+  if (parsed.blocks) {
+    network.blocks = parsed.blocks.map(block => normalizeBlock(block));
+  }
+
   // 生成默认连接（顺序连接）
   network.connections = generateSequentialConnections(network.layers);
 
@@ -62,6 +67,31 @@ function normalizeLayer(layer) {
     pool: layer.pool || null,
     dropout: layer.dropout || false,
     norm: layer.norm || null
+  };
+}
+
+/**
+ * 标准化块定义
+ * @param {object} block - 原始块定义
+ * @returns {object} 标准化后的块定义
+ */
+function normalizeBlock(block) {
+  return {
+    name: block.name,
+    type: block.type,
+    main: block.main ? block.main.map(layer => normalizeLayer(layer)) : [],
+    skip: block.skip,
+    branches: block.branches ? block.branches.map(branch => {
+      if (Array.isArray(branch)) {
+        return branch.map(layer => normalizeLayer(layer));
+      }
+      return normalizeLayer(branch);
+    }) : [],
+    layers: block.layers ? block.layers.map(layer => normalizeLayer(layer)) : [],
+    merge: block.merge || null,
+    repeat: block.repeat || 1,
+    act: block.act || null,
+    norm: block.norm || null
   };
 }
 

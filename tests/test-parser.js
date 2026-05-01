@@ -90,3 +90,27 @@ layers:
   assertEqual(result.connections[1].from, 'B', '第二个连接起点');
   assertEqual(result.connections[1].to, 'C', '第二个连接终点');
 });
+
+test('解析残差块', function() {
+  const yaml = `
+layers:
+  - {name: Input, type: input, size: "224x224x3"}
+blocks:
+  - name: ResBlock1
+    type: residual
+    main:
+      - {name: conv1, type: conv, kernel: 3, channels: 64, act: ReLU}
+      - {name: conv2, type: conv, kernel: 3, channels: 64}
+    skip: identity
+    merge: add
+    act: ReLU
+`;
+  const result = parseNetworkYaml(yaml);
+  assertEqual(result.blocks.length, 1, 'blocks 数量');
+  const block = result.blocks[0];
+  assertEqual(block.name, 'ResBlock1', 'block 名称');
+  assertEqual(block.type, 'residual', 'block 类型');
+  assertEqual(block.main.length, 2, 'main 路径层数');
+  assertEqual(block.skip, 'identity', 'skip 类型');
+  assertEqual(block.merge, 'add', 'merge 类型');
+});
