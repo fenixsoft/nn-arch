@@ -132,3 +132,33 @@ test('布局配置常量正确', function() {
   assertEqual(LAYOUT_CONFIG.startX, 10, '起始 X 坐标');
   assertEqual(LAYOUT_CONFIG.startY, 20, '起始 Y 坐标');
 });
+
+test('计算 sections 分组区域位置', function() {
+  const network = {
+    name: 'TestNet',
+    layout: 'horizontal',
+    layers: [
+      {name: 'Input', type: 'input', size: '10'},
+      {name: 'Conv1', type: 'conv', kernel: 3, channels: 64},
+      {name: 'Conv2', type: 'conv', kernel: 3, channels: 64},
+      {name: 'FC1', type: 'fc', size: 1000},
+      {name: 'Output', type: 'output', size: 10}
+    ],
+    sections: [
+      {name: '特征提取器', layers: ['Input', 'Conv1', 'Conv2']},
+      {name: '分类器', layers: ['FC1', 'Output']}
+    ],
+    blocks: [],
+    connections: [],
+    layersAfterBlocks: []
+  };
+
+  const layout = calculateLayout(network);
+  assertEqual(layout.sections.length, 2, 'sections 数量');
+
+  // 第一个 section 应包含 Input, Conv1, Conv2
+  const section1 = layout.sections[0];
+  assertEqual(section1.name, '特征提取器', 'section 名称');
+  assertEqual(section1.x, 0, 'section x 起点');
+  assertEqual(section1.y, 25, 'section y 起点');
+});

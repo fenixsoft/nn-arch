@@ -77,6 +77,33 @@ function calculateHorizontalLayout(network, layout) {
 
   // 计算连接箭头位置
   layout.connections = calculateConnections(layout.layers);
+
+  // 计算 sections 分组区域
+  if (network.sections && network.sections.length > 0) {
+    network.sections.forEach(section => {
+      const sectionLayers = section.layers.map(name =>
+        layout.layers.find(l => l.name === name)
+      ).filter(l => l);
+
+      if (sectionLayers.length > 0) {
+        const minX = Math.min(...sectionLayers.map(l => l.x)) - LAYOUT_CONFIG.sectionPadding;
+        const maxX = Math.max(...sectionLayers.map(l => l.x + l.width)) + LAYOUT_CONFIG.sectionPadding;
+        // 计算包含标题的区域，确保不超过标题位置
+        const titleBottom = LAYOUT_CONFIG.fontSizeTitle + 5;
+        const calculatedMinY = Math.min(...sectionLayers.map(l => l.y)) - LAYOUT_CONFIG.sectionPadding - LAYOUT_CONFIG.fontSizeSection;
+        const minY = Math.max(titleBottom, calculatedMinY);
+        const maxY = Math.max(...sectionLayers.map(l => l.y + l.height)) + LAYOUT_CONFIG.sectionPadding;
+
+        layout.sections.push({
+          name: section.name,
+          x: minX,
+          y: minY,
+          width: maxX - minX,
+          height: maxY - minY
+        });
+      }
+    });
+  }
 }
 
 /**
