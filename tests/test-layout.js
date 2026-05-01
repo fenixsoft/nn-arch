@@ -12,7 +12,8 @@ test('计算简单网络层位置（水平布局）', function() {
     sections: [],
     blocks: [],
     connections: [],
-    layersAfterBlocks: []
+    layersAfterBlocks: [],
+    rowLabels: []
   };
 
   const layout = calculateLayout(network);
@@ -40,7 +41,8 @@ test('计算垂直布局', function() {
     sections: [],
     blocks: [],
     connections: [],
-    layersAfterBlocks: []
+    layersAfterBlocks: [],
+    rowLabels: []
   };
 
   const layout = calculateLayout(network);
@@ -68,7 +70,8 @@ test('计算垂直布局层位置', function() {
     sections: [],
     blocks: [],
     connections: [],
-    layersAfterBlocks: []
+    layersAfterBlocks: [],
+    rowLabels: []
   };
 
   const layout = calculateLayout(network);
@@ -92,7 +95,8 @@ test('计算连接箭头位置（水平布局）', function() {
     sections: [],
     blocks: [],
     connections: [],
-    layersAfterBlocks: []
+    layersAfterBlocks: [],
+    rowLabels: []
   };
 
   const layout = calculateLayout(network);
@@ -121,7 +125,8 @@ test('计算布局总尺寸', function() {
     sections: [],
     blocks: [],
     connections: [],
-    layersAfterBlocks: []
+    layersAfterBlocks: [],
+    rowLabels: []
   };
 
   const layout = calculateLayout(network);
@@ -143,7 +148,8 @@ test('处理空网络', function() {
     sections: [],
     blocks: [],
     connections: [],
-    layersAfterBlocks: []
+    layersAfterBlocks: [],
+    rowLabels: []
   };
 
   const layout = calculateLayout(network);
@@ -158,6 +164,7 @@ test('布局配置常量正确', function() {
   assertEqual(LAYOUT_CONFIG.layerGap, 27, '层间距');
   assertEqual(LAYOUT_CONFIG.startX, 63, '起始 X 坐标');
   assertEqual(LAYOUT_CONFIG.startY, 81, '起始 Y 坐标');
+  assertEqual(LAYOUT_CONFIG.maxLayersPerRow, 6, '每行最大层数');
 });
 
 test('计算 sections 分组区域位置（换行布局）', function() {
@@ -172,12 +179,13 @@ test('计算 sections 分组区域位置（换行布局）', function() {
       {name: 'Output', type: 'output', size: 10}
     ],
     sections: [
-      {name: '特征提取器', layers: ['Input', 'Conv1', 'Conv2']},
-      {name: '分类器', layers: ['FC1', 'Output']}
+      {name: '特征提取器', layers: ['Input', 'Conv1', 'Conv2'], rowLabel: 'Flatten: N'},
+      {name: '分类器', layers: ['FC1', 'Output'], rowLabel: null}
     ],
     blocks: [],
     connections: [],
-    layersAfterBlocks: []
+    layersAfterBlocks: [],
+    rowLabels: []
   };
 
   const layout = calculateLayout(network);
@@ -190,6 +198,45 @@ test('计算 sections 分组区域位置（换行布局）', function() {
 
   // 验证行间连接存在
   assertEqual(layout.rowConnections.length, 1, '行间连接数量');
+
+  // 验证标注来自 section 定义
+  assertEqual(layout.rowConnections[0].label, 'Flatten: N', '行间标注来自 section 定义');
+});
+
+test('section 内超过 6 个元素自动换行', function() {
+  const network = {
+    name: 'TestNet',
+    layout: 'horizontal',
+    layers: [
+      {name: 'L1', type: 'conv'},
+      {name: 'L2', type: 'conv'},
+      {name: 'L3', type: 'conv'},
+      {name: 'L4', type: 'conv'},
+      {name: 'L5', type: 'conv'},
+      {name: 'L6', type: 'conv'},
+      {name: 'L7', type: 'conv'},
+      {name: 'L8', type: 'conv'}
+    ],
+    sections: [
+      {name: '大 Section', layers: ['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8']}
+    ],
+    blocks: [],
+    connections: [],
+    layersAfterBlocks: [],
+    rowLabels: []
+  };
+
+  const layout = calculateLayout(network);
+
+  // 检查层有 rowIndex 标记
+  const layer1 = layout.layers.find(l => l.name === 'L1');
+  const layer7 = layout.layers.find(l => l.name === 'L7');
+
+  assertEqual(layer1.rowIndex, 0, 'L1 在第一行');
+  assertEqual(layer7.rowIndex, 1, 'L7 在第二行（超过 6 个换行）');
+
+  // L7 的 y 应该比 L1 大（换行到下一行）
+  assertEqual(layer7.y > layer1.y, true, 'L7 在 L1 下方');
 });
 
 // === 模板布局测试 ===
@@ -201,6 +248,7 @@ layout: horizontal
 sections:
   - name: 特征提取器
     layers: [Input, Conv1_1, Conv1_2, Pool1, Conv2_1, Conv2_2, Pool2, Conv3_1, Conv3_2, Conv3_3, Pool3, Conv4_1, Conv4_2, Conv4_3, Pool4, Conv5_1, Conv5_2, Conv5_3, Pool5]
+    row_label: "Flatten: 25088"
   - name: 分类器
     layers: [FC1, FC2, FC3, Output]
 
@@ -239,8 +287,15 @@ layers:
   const allLayersHaveCoords = layout.layers.every(l => l.x >= 0 && l.y >= 0);
   assertEqual(allLayersHaveCoords, true, 'VGG16 所有层都有有效坐标');
 
-  // 验证行间连接存在（特征提取器 -> 分类器）
+  // 验证行间连接存在
   assertEqual(layout.rowConnections.length, 1, 'VGG16 行间连接数量');
+
+  // 验证标注来自 YAML 定义
+  assertEqual(layout.rowConnections[0].label, 'Flatten: 25088', 'VGG16 行间标注来自 YAML');
+
+  // 特征提取器有 19 个层，应该分成多行（19 > 6）
+  const section1RowCount = layout.sections[0].rowCount;
+  assertEqual(section1RowCount >= 3, true, 'VGG16 特征提取器有多行（超过 6 个元素换行）');
 });
 
 test('计算 ResNet18 模板布局', function() {

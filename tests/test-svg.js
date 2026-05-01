@@ -20,26 +20,22 @@ test('生成简单网络 SVG', function() {
   assertEqual(svg.includes('Input'), true, '包含层名称');
 });
 
-test('SVG 包含箭头定义', function() {
+test('SVG 箭头标记缩小 50%', function() {
   const layout = {
     width: 400,
     height: 120,
     title: { x: 200, y: 25, text: 'Test' },
     sections: [],
-    layers: [
-      {name: 'A', type: 'input', x: 10, y: 40, width: 216, height: 126, data: {}},
-      {name: 'B', type: 'output', x: 253, y: 40, width: 216, height: 126, data: {}}
-    ],
-    connections: [
-      {from: 'A', to: 'B', x1: 226, y1: 103, x2: 253, y2: 103, type: 'sequential'}
-    ],
+    layers: [],
+    connections: [],
     rowConnections: [],
     blocks: []
   };
 
   const svg = generateSvg(layout);
-  assertEqual(svg.includes('marker'), true, '包含箭头标记定义');
-  assertEqual(svg.includes('<path'), true, '包含路径元素');
+  // 箭头标记尺寸（缩小 50% 后）
+  assertEqual(svg.includes('markerWidth="7.2"'), true, '箭头标记宽度缩小');
+  assertEqual(svg.includes('markerHeight="5.4"'), true, '箭头标记高度缩小');
 });
 
 test('卷积层包含蓝色样式', function() {
@@ -91,6 +87,93 @@ test('section标题为粗体', function() {
   assertEqual(svg.includes('font-weight="bold"'), true, 'section标题包含粗体样式');
 });
 
+test('显示 pool 信息', function() {
+  const layout = {
+    width: 300, height: 150,
+    title: { x: 150, y: 30, text: 'Test' },
+    sections: [],
+    layers: [{
+      name: 'Conv1',
+      type: 'conv',
+      x: 10, y: 40,
+      width: 216, height: 126,
+      data: {kernel: 3, channels: 64, pool: {kernel: 3, stride: 2}}
+    }],
+    connections: [],
+    rowConnections: [],
+    blocks: []
+  };
+  const svg = generateSvg(layout);
+  assertEqual(svg.includes('Pool'), true, '包含 Pool 信息');
+  assertEqual(svg.includes('#a559f0'), true, 'Pool 信息使用紫色');
+});
+
+test('显示 dropout 信息', function() {
+  const layout = {
+    width: 300, height: 150,
+    title: { x: 150, y: 30, text: 'Test' },
+    sections: [],
+    layers: [{
+      name: 'FC1',
+      type: 'fc',
+      x: 10, y: 40,
+      width: 216, height: 126,
+      data: {size: 4096, dropout: true}
+    }],
+    connections: [],
+    rowConnections: [],
+    blocks: []
+  };
+  const svg = generateSvg(layout);
+  assertEqual(svg.includes('Dropout'), true, '包含 Dropout 信息');
+  assertEqual(svg.includes('#d9a55b'), true, 'Dropout 信息使用橙色');
+});
+
+test('层名称包含 +Pool 后缀', function() {
+  const layout = {
+    width: 300, height: 150,
+    title: { x: 150, y: 30, text: 'Test' },
+    sections: [],
+    layers: [{
+      name: 'Conv1',
+      type: 'conv',
+      x: 10, y: 40,
+      width: 216, height: 126,
+      data: {kernel: 3, channels: 64, pool: {kernel: 3}}
+    }],
+    connections: [],
+    rowConnections: [],
+    blocks: []
+  };
+  const svg = generateSvg(layout);
+  assertEqual(svg.includes('Conv1+Pool'), true, '层名称包含 +Pool 后缀');
+});
+
+test('行间连接标注来自 YAML', function() {
+  const layout = {
+    width: 500, height: 300,
+    title: { x: 250, y: 30, text: 'Test' },
+    sections: [],
+    layers: [],
+    connections: [],
+    rowConnections: [{
+      from: 'L1',
+      to: 'L2',
+      fromX: 100,
+      fromY: 100,
+      midY: 150,
+      toX: 200,
+      toY: 200,
+      label: 'Flatten: 9216',
+      labelX: 220,
+      labelY: 150
+    }],
+    blocks: []
+  };
+  const svg = generateSvg(layout);
+  assertEqual(svg.includes('Flatten: 9216'), true, '包含自定义标注');
+});
+
 // === 模板 SVG 生成测试 ===
 
 test('生成 VGG16 模板 SVG', function() {
@@ -100,6 +183,7 @@ layout: horizontal
 sections:
   - name: 特征提取器
     layers: [Input, Conv1_1, Conv1_2, Pool1, Conv2_1, Conv2_2, Pool2, Conv3_1, Conv3_2, Conv3_3, Pool3, Conv4_1, Conv4_2, Conv4_3, Pool4, Conv5_1, Conv5_2, Conv5_3, Pool5]
+    row_label: "Flatten: 25088"
   - name: 分类器
     layers: [FC1, FC2, FC3, Output]
 
@@ -143,10 +227,10 @@ layers:
   assertEqual(svg.includes('#e8f4f8'), true, 'VGG16 SVG 包含卷积层颜色');
   assertEqual(svg.includes('#f0e8f8'), true, 'VGG16 SVG 包含池化层颜色');
   assertEqual(svg.includes('#e8f8f0'), true, 'VGG16 SVG 包含全连接层颜色');
-  // 验证放大 300%（显示尺寸大于 viewBox）
-  assertEqual(svg.includes('width="'), true, 'VGG16 SVG 包含显示宽度');
-  // 验证折线连接（包含 L 命令多次）
-  assertEqual(svg.includes('L'), true, 'VGG16 SVG 包含折线');
+  // 验证 Flatten 标注来自 YAML
+  assertEqual(svg.includes('Flatten: 25088'), true, 'VGG16 SVG 包含自定义标注');
+  // 验证 Dropout 显示
+  assertEqual(svg.includes('Dropout'), true, 'VGG16 SVG 显示 Dropout');
 });
 
 test('生成 ResNet18 模板 SVG', function() {

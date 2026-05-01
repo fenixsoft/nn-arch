@@ -32,11 +32,12 @@ function parseNetworkYaml(yamlText) {
   const network = {
     name: parsed.name || 'Unnamed Network',
     layout: parsed.layout || 'horizontal',
-    sections: parsed.sections || [],
+    sections: parsed.sections ? parsed.sections.map(s => normalizeSection(s)) : [],
     layers: [],
     blocks: parsed.blocks ? parsed.blocks.map(block => normalizeBlock(block)) : [],
     connections: [],
-    layersAfterBlocks: parsed.layers_after_blocks ? parsed.layers_after_blocks.map(layer => normalizeLayer(layer)) : []
+    layersAfterBlocks: parsed.layers_after_blocks ? parsed.layers_after_blocks.map(layer => normalizeLayer(layer)) : [],
+    rowLabels: parsed.row_labels || []  // 行间连接标注
   };
 
   if (parsed.layers) {
@@ -66,6 +67,19 @@ function normalizeLayer(layer) {
     pool: layer.pool || null,
     dropout: layer.dropout || false,
     norm: layer.norm || null
+  };
+}
+
+/**
+ * 标准化 section 定义
+ * @param {object} section - 原始 section 定义
+ * @returns {object} 标准化后的 section 定义
+ */
+function normalizeSection(section) {
+  return {
+    name: section.name,
+    layers: section.layers || [],
+    rowLabel: section.row_label || null  // 该 section 后的行间连接标注
   };
 }
 

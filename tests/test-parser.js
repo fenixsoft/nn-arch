@@ -76,6 +76,26 @@ layers:
   assertDeepEqual(result.sections[0].layers, ['Input', 'Conv1', 'Conv2'], '第一个 section 层列表');
 });
 
+test('解析 section row_label', function() {
+  const yaml = `
+name: TestNet
+sections:
+  - name: 特征提取器
+    layers: [Input, Conv1]
+    row_label: "Flatten: 9216"
+  - name: 分类器
+    layers: [FC1, Output]
+layers:
+  - {name: Input, type: input, size: "224x224x3"}
+  - {name: Conv1, type: conv, kernel: 3, channels: 64}
+  - {name: FC1, type: fc, size: 1000}
+  - {name: Output, type: output, size: 10}
+`;
+  const result = parseNetworkYaml(yaml);
+  assertEqual(result.sections[0].rowLabel, 'Flatten: 9216', 'section row_label');
+  assertEqual(result.sections[1].rowLabel, null, '未定义 row_label 为 null');
+});
+
 test('生成顺序连接', function() {
   const yaml = `
 layers:

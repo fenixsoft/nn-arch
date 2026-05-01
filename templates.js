@@ -12,6 +12,7 @@ layout: horizontal
 sections:
   - name: 特征提取器
     layers: [Input, Conv1, Conv2, Conv3, Conv4, Conv5]
+    row_label: "Flatten: 9216"
   - name: 分类器
     layers: [FC1, FC2, FC3, Output]
 
@@ -36,6 +37,7 @@ layout: horizontal
 sections:
   - name: 特征提取器
     layers: [Input, Conv1_1, Conv1_2, Pool1, Conv2_1, Conv2_2, Pool2, Conv3_1, Conv3_2, Conv3_3, Pool3, Conv4_1, Conv4_2, Conv4_3, Pool4, Conv5_1, Conv5_2, Conv5_3, Pool5]
+    row_label: "Flatten: 25088"
   - name: 分类器
     layers: [FC1, FC2, FC3, Output]
 

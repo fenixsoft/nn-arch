@@ -18,7 +18,7 @@ const COLORS = {
   identity: { fill: '#f8f8f8', stroke: '#999999' }
 };
 
-// 样式配置（放大 300%）
+// 样式配置（放大 300%，箭头缩小 50%）
 const SVG_CONFIG = {
   fontSizeName: 25.2,    // 8.4 * 3
   fontSizeDetail: 21.6,  // 7.2 * 3
@@ -28,7 +28,12 @@ const SVG_CONFIG = {
   strokeWidth: 3.6,      // 1.2 * 3
   arrowWidth: 2.7,       // 0.9 * 3
   scale: 3,              // 显示放大倍数
-  nameGap: 12            // name 上下的额外空隙 (4px * 3)
+  nameGap: 12,           // name 上下的额外空隙 (4px * 3)
+  // 箭头标记尺寸（缩小 50%）
+  arrowMarkerWidth: 7.2,   // 4.8 * 3 * 0.5
+  arrowMarkerHeight: 5.4,  // 3.6 * 3 * 0.5
+  arrowRefX: 6.3,          // 4.2 * 3 * 0.5
+  arrowRefY: 2.7           // 1.8 * 3 * 0.5
 };
 
 /**
@@ -83,14 +88,13 @@ function generateSvg(layout) {
 }
 
 /**
- * 生成定义区（defs）
+ * 生成定义区（defs）- 箭头缩小 50%
  */
 function generateDefs() {
-  const arrowScale = SVG_CONFIG.scale;
   return `
   <defs>
-    <marker id="arrowhead" markerWidth="${4.8 * arrowScale}" markerHeight="${3.6 * arrowScale}" refX="${4.2 * arrowScale}" refY="${1.8 * arrowScale}" orient="auto">
-      <polygon points="0 0, ${4.8 * arrowScale} ${1.8 * arrowScale}, 0 ${3.6 * arrowScale}" fill="#999"/>
+    <marker id="arrowhead" markerWidth="${SVG_CONFIG.arrowMarkerWidth}" markerHeight="${SVG_CONFIG.arrowMarkerHeight}" refX="${SVG_CONFIG.arrowRefX}" refY="${SVG_CONFIG.arrowRefY}" orient="auto">
+      <polygon points="0 0, ${SVG_CONFIG.arrowMarkerWidth} ${SVG_CONFIG.arrowRefY}, 0 ${SVG_CONFIG.arrowMarkerHeight}" fill="#999"/>
     </marker>
   </defs>`;
 }
@@ -113,7 +117,7 @@ function generateSection(section) {
 }
 
 /**
- * 生成层矩形框
+ * 生成层矩形框（显示 pool 和 dropout）
  */
 function generateLayer(layer) {
   const colors = COLORS[layer.type] || COLORS.input;
@@ -125,7 +129,7 @@ ${content}`;
 }
 
 /**
- * 生成层内容文本（name上下增加空隙）
+ * 生成层内容文本（包含 pool、dropout 等）
  */
 function generateLayerContent(layer) {
   const centerX = layer.x + layer.width / 2;
@@ -133,7 +137,9 @@ function generateLayerContent(layer) {
 
   // 层名称（上方增加空隙）
   const nameY = layer.y + SVG_CONFIG.nameGap + SVG_CONFIG.fontSizeName;
-  let content = `<text x="${centerX}" y="${nameY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeName}" font-weight="bold" font-family="Arial, sans-serif" fill="#333">${layer.name}</text>`;
+  // 名称可能包含附加信息（+Pool, +Dropout）
+  const displayName = getDisplayName(layer);
+  let content = `<text x="${centerX}" y="${nameY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeName}" font-weight="bold" font-family="Arial, sans-serif" fill="#333">${displayName}</text>`;
 
   // 参数详情（name下方增加空隙）
   const detailY = nameY + SVG_CONFIG.nameGap + SVG_CONFIG.fontSizeDetail;
@@ -143,18 +149,54 @@ function generateLayerContent(layer) {
   }
 
   // 输出尺寸
+  let nextY = detailY + SVG_CONFIG.fontSizeDetail;
   if (data.out) {
-    const outY = detailY + SVG_CONFIG.fontSizeDetail;
-    content += `<text x="${centerX}" y="${outY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#666">${data.out}</text>`;
+    content += `<text x="${centerX}" y="${nextY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#666">${data.out}</text>`;
+    nextY += SVG_CONFIG.fontSizeDetail;
+  }
+
+  // Pool 信息（如果有）
+  if (data.pool) {
+    const poolText = typeof data.pool === 'object'
+      ? `Pool: k=${data.pool.kernel || ''}${data.pool.stride ? `, s=${data.pool.stride}` : ''}`
+      : `+Pool`;
+    content += `<text x="${centerX}" y="${nextY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#a559f0">${poolText}</text>`;
+    nextY += SVG_CONFIG.fontSizeDetail;
+  }
+
+  // Dropout 信息（如果有）
+  if (data.dropout) {
+    const dropoutText = data.dropout === true ? '+Dropout' : `Dropout: ${data.dropout}`;
+    content += `<text x="${centerX}" y="${nextY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#d9a55b">${dropoutText}</text>`;
+    nextY += SVG_CONFIG.fontSizeDetail;
   }
 
   // 激活函数
   if (data.act) {
-    const actY = (data.out ? detailY + SVG_CONFIG.fontSizeDetail * 2 : detailY + SVG_CONFIG.fontSizeDetail);
-    content += `<text x="${centerX}" y="${actY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#27ae60">${data.act}</text>`;
+    content += `<text x="${centerX}" y="${nextY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#27ae60">${data.act}</text>`;
   }
 
   return content;
+}
+
+/**
+ * 获取层显示名称（包含附加信息）
+ */
+function getDisplayName(layer) {
+  const data = layer.data;
+  let name = layer.name;
+
+  // 如果有 pool 但不是单独层，在名称后添加 +Pool
+  if (data.pool && layer.type !== 'pool') {
+    name += '+Pool';
+  }
+
+  // 如果有 dropout，在名称后添加 +Dropout
+  if (data.dropout && layer.type !== 'dropout') {
+    name += '+Dropout';
+  }
+
+  return name;
 }
 
 /**
@@ -193,17 +235,19 @@ function generateConnection(conn) {
 }
 
 /**
- * 生成行间连接（折线：不穿越section）
+ * 生成行间连接（折线）
  */
 function generateRowConnection(conn) {
-  // 折线路径：从from层底部 -> 向下到中间 -> 水平移动 -> 向下到section顶部（箭头指向这里）
-  // 使用 SVG path 的 L 命令绘制折线
+  // 折线路径
   const path = `<path d="M${conn.fromX} ${conn.fromY} L${conn.fromX} ${conn.midY} L${conn.toX} ${conn.midY} L${conn.toX} ${conn.toY}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`;
 
-  // 标注文本
-  const label = `<text x="${conn.labelX}" y="${conn.labelY}" text-anchor="start" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#666">${conn.label}</text>`;
+  // 标注文本（如果有）
+  if (conn.label) {
+    const label = `<text x="${conn.labelX}" y="${conn.labelY}" text-anchor="start" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#666">${conn.label}</text>`;
+    return path + '\n' + label;
+  }
 
-  return path + '\n' + label;
+  return path;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -216,6 +260,7 @@ if (typeof module !== 'undefined' && module.exports) {
     generateLayerContent,
     generateConnection,
     generateRowConnection,
+    getDisplayName,
     getLayerDetail,
     COLORS,
     SVG_CONFIG
