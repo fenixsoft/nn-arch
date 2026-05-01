@@ -1,0 +1,201 @@
+/* 全局样式 */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, "Microsoft YaHei", sans-serif;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+/* 容器 */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* 头部 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 20px;
+}
+
+.header h1 {
+  font-size: 24px;
+  color: #333;
+}
+
+.download-btn {
+  padding: 10px 20px;
+  background: #5ba5d9;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.download-btn:hover:not(:disabled) {
+  background: #4a95c9;
+}
+
+.download-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* 主内容区 */
+.main {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  min-height: 500px;
+}
+
+/* 编辑器面板 */
+.editor-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-panel label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.editor-panel textarea {
+  flex: 1;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 14px;
+  resize: none;
+  background: #fff;
+}
+
+.editor-panel textarea:focus {
+  border-color: #5ba5d9;
+  outline: none;
+}
+
+/* 预览面板 */
+.preview-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-panel label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.svg-preview {
+  flex: 1;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 20px;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.svg-preview svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.placeholder-text {
+  color: #999;
+  font-size: 14px;
+}
+
+.error-msg {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f8d7da;
+  color: #721c24;
+  border-radius: 4px;
+  font-size: 12px;
+  display: none;
+}
+
+.error-msg.show {
+  display: block;
+}
+
+/* 底部操作区 */
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px 0;
+  border-top: 1px solid #ddd;
+  margin-top: 20px;
+}
+
+.action-btn {
+  padding: 10px 20px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.action-btn:hover {
+  background: #f0f0f0;
+}
+
+.action-btn.primary {
+  background: #5bd9a5;
+  color: white;
+  border: none;
+}
+
+.action-btn.primary:hover {
+  background: #4bc995;
+}
+
+.template-select {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.template-select label {
+  font-size: 14px;
+  color: #666;
+}
+
+.template-select select {
+  padding: 8px 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.template-select select:focus {
+  border-color: #5ba5d9;
+  outline: none;
+}
