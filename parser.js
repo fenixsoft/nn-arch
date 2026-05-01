@@ -14,36 +14,35 @@ if (typeof module !== 'undefined' && module.exports) {
  * @returns {object} 解析后的网络定义对象
  */
 function parseNetworkYaml(yamlText) {
-  // 使用 js-yaml 解析 YAML
-  const parsed = jsyaml.load(yamlText);
+  if (!yamlText || yamlText.trim() === '') {
+    throw new Error('YAML 解析错误: 输入为空');
+  }
 
-  // 构建标准化的网络定义对象
+  let parsed;
+  try {
+    parsed = jsyaml.load(yamlText);
+  } catch (e) {
+    throw new Error('YAML 解析错误: ' + e.message);
+  }
+
+  if (!parsed) {
+    throw new Error('YAML 解析错误: 解析结果为空');
+  }
+
   const network = {
     name: parsed.name || 'Unnamed Network',
     layout: parsed.layout || 'horizontal',
     sections: parsed.sections || [],
     layers: [],
-    blocks: parsed.blocks || [],
+    blocks: parsed.blocks ? parsed.blocks.map(block => normalizeBlock(block)) : [],
     connections: [],
-    layersAfterBlocks: parsed.layers_after_blocks || []
+    layersAfterBlocks: parsed.layers_after_blocks ? parsed.layers_after_blocks.map(layer => normalizeLayer(layer)) : []
   };
 
-  // 解析主层列表
   if (parsed.layers) {
     network.layers = parsed.layers.map(layer => normalizeLayer(layer));
   }
 
-  // 解析块后层
-  if (parsed.layers_after_blocks) {
-    network.layersAfterBlocks = parsed.layers_after_blocks.map(layer => normalizeLayer(layer));
-  }
-
-  // 解析 blocks
-  if (parsed.blocks) {
-    network.blocks = parsed.blocks.map(block => normalizeBlock(block));
-  }
-
-  // 生成默认连接（顺序连接）
   network.connections = generateSequentialConnections(network.layers);
 
   return network;

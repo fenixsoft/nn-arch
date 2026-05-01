@@ -150,3 +150,36 @@ blocks:
   assertEqual(block.repeat, 6, '重复次数');
   assertEqual(block.layers.length, 2, '内部层数量');
 });
+
+test('解析无效 YAML 报错', function() {
+  const yaml = `
+layers:
+  - {name: Test, type: conv
+`;  // 缺少闭合括号
+  try {
+    parseNetworkYaml(yaml);
+    throw new Error('应该抛出异常但没有');
+  } catch (e) {
+    if (!e.message.includes('YAML')) {
+      throw new Error('错误信息应包含 YAML: ' + e.message);
+    }
+  }
+});
+
+test('空输入报错', function() {
+  try {
+    parseNetworkYaml('');
+    throw new Error('应该抛出异常但没有');
+  } catch (e) {
+    assertEqual(e.message, 'YAML 解析错误: 输入为空', '空输入错误信息');
+  }
+});
+
+test('解析结果为空报错', function() {
+  try {
+    parseNetworkYaml('# comment only');
+    throw new Error('应该抛出异常但没有');
+  } catch (e) {
+    assertEqual(e.message, 'YAML 解析错误: 解析结果为空', '空结果错误信息');
+  }
+});
