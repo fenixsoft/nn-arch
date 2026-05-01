@@ -19,7 +19,8 @@ const LAYOUT_CONFIG = {
   rowGap: 87,            // 行间距（用于换行时的连线区域）
   rowWrapGap: 20,        // 换行时额外增加的间距
   startX: 63,            // 21 * 3
-  startY: 81,            // 27 * 3
+  startY: 81,            // 27 * 3 - 顶部边距
+  bottomPadding: 36,     // 12 * 3 - 底部边距（不超过12px）
   maxLayersPerRow: 6     // 每行最多放置的层数量
 };
 
@@ -83,7 +84,7 @@ function calculateHorizontalLayout(network, layout) {
   // 计算总尺寸
   const lastLayer = layout.layers[layout.layers.length - 1];
   layout.width = lastLayer ? lastLayer.x + lastLayer.width + LAYOUT_CONFIG.startX : LAYOUT_CONFIG.startX * 2;
-  layout.height = currentY + layerHeight + LAYOUT_CONFIG.startY;
+  layout.height = currentY + layerHeight + LAYOUT_CONFIG.bottomPadding;
 
   // 计算标题位置（居中，下方留空隙）
   layout.title.x = layout.width / 2;
@@ -257,7 +258,7 @@ function calculateSectionsLayout(network, layout) {
   const maxX = Math.max(...layout.layers.map(l => l.x + l.width));
   const maxY = Math.max(...layout.sections.map(s => s.y + s.height));
   layout.width = maxX + LAYOUT_CONFIG.startX;
-  layout.height = maxY + LAYOUT_CONFIG.startY;
+  layout.height = maxY + LAYOUT_CONFIG.bottomPadding;
   layout.title.x = layout.width / 2;
 }
 
@@ -285,7 +286,7 @@ function calculateVerticalLayout(network, layout) {
   });
 
   layout.width = currentX + layerWidth + LAYOUT_CONFIG.startX;
-  layout.height = currentY + LAYOUT_CONFIG.startY;
+  layout.height = currentY + LAYOUT_CONFIG.bottomPadding;
   layout.title.x = layout.width / 2;
   layout.title.y = LAYOUT_CONFIG.fontSizeTitle + LAYOUT_CONFIG.titleGap;
 

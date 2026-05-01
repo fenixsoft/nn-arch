@@ -135,9 +135,9 @@ test('计算布局总尺寸', function() {
   // = 63 + 3*216 + 2*27 + 63 = 828
   assertEqual(layout.width, 828, '总宽度');
 
-  // 总高度 = startY + 层高度 + startY
-  // = 81 + 126 + 81 = 288
-  assertEqual(layout.height, 288, '总高度');
+  // 总高度 = startY + 层高度 + bottomPadding
+  // = 81 + 126 + 36 = 243
+  assertEqual(layout.height, 243, '总高度');
 });
 
 test('处理空网络', function() {
