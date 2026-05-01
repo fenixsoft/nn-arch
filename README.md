@@ -32,7 +32,33 @@ nn-arch/
 
 ## 使用方式
 
-### 方式一：直接打开网页
+### 方式一：npm 安装
+
+```bash
+npm install nn-arch
+```
+
+在 Node.js 中使用：
+
+```javascript
+const NNArch = require('nn-arch');
+
+// 从 YAML 生成 SVG
+const yaml = `
+name: SimpleNet
+layout: horizontal
+layers:
+  - {name: Input, type: input, size: "224x224x3"}
+  - {name: Conv1, type: conv, kernel: 3, channels: 64, act: ReLU}
+  - {name: Output, type: output, size: 10}
+`;
+const svg = NNArch.generateFromYaml(yaml);
+
+// 从预置模板生成
+const vggSvg = NNArch.generateFromTemplate('vgg16');
+```
+
+### 方式二：直接打开网页
 
 在浏览器中打开 `index.html`，即可使用可视化界面：
 
@@ -42,7 +68,7 @@ nn-arch/
 4. 使用 +/- 按钮调整缩放比例
 5. 点击"下载 SVG"保存文件
 
-### 方式二：外部 API 调用
+### 方式三：外部 API 聃用（浏览器）
 
 在你的网页中引入相关文件后，调用 `NNArch` 对象的方法：
 
