@@ -35,13 +35,13 @@ nn-arch/
 ### 方式一：npm 安装
 
 ```bash
-npm install nn-arch
+npm install @dmla-icyfenix/nn-arch
 ```
 
 在 Node.js 中使用：
 
 ```javascript
-const NNArch = require('nn-arch');
+const NNArch = require('@dmla-icyfenix/nn-arch');
 
 // 从 YAML 生成 SVG
 const yaml = `
