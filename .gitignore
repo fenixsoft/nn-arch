@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+
+# Generated SVG files (can be regenerated)
+*_arch.svg
+
+# Development artifacts
+docs/
+
+# Package lock (optional - some projects include it)
+package-lock.json

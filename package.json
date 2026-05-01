@@ -1,0 +1,21 @@
+{
+  "name": "nn-arch",
+  "version": "1.0.0",
+  "description": "",
+  "main": "parser.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "node tests/test-runner.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "js-yaml": "^4.1.1"
+  }
+}
