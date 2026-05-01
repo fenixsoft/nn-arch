@@ -47,12 +47,28 @@ const layout = require('../layout.js');
 globalThis.calculateLayout = layout.calculateLayout;
 globalThis.LAYOUT_CONFIG = layout.LAYOUT_CONFIG;
 
+// 加载 svg-generator.js
+const svgGenerator = require('../svg-generator.js');
+globalThis.generateSvg = svgGenerator.generateSvg;
+globalThis.generateDefs = svgGenerator.generateDefs;
+globalThis.generateTitle = svgGenerator.generateTitle;
+globalThis.generateSection = svgGenerator.generateSection;
+globalThis.generateLayer = svgGenerator.generateLayer;
+globalThis.generateLayerContent = svgGenerator.generateLayerContent;
+globalThis.generateConnection = svgGenerator.generateConnection;
+globalThis.getLayerDetail = svgGenerator.getLayerDetail;
+globalThis.COLORS = svgGenerator.COLORS;
+globalThis.SVG_CONFIG = svgGenerator.SVG_CONFIG;
+
 // 运行测试
 console.log('\n=== Running Parser Tests ===\n');
 require('./test-parser.js');
 
 console.log('\n=== Running Layout Tests ===\n');
 require('./test-layout.js');
+
+console.log('\n=== Running SVG Generator Tests ===\n');
+require('./test-svg.js');
 
 // 输出总结
 console.log('\n' + '='.repeat(40));
