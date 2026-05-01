@@ -15,8 +15,9 @@ const LAYOUT_CONFIG = {
   fontSizeTitle: 36,     // 12 * 3
   fontSizeSection: 25.2, // 8.4 * 3
   titleGap: 18,          // 标题与内容的间隙
-  sectionTitleGap: 15,   // section 标题与层之间的间隙
-  rowGap: 72,            // 行间距（用于换行时的连线区域）
+  sectionTitleGap: 10,   // section 标题与层之间的间隙（减少5px：15-5=10）
+  rowGap: 87,            // 行间距（用于换行时的连线区域，增加5px：72+15=87）
+  rowWrapGap: 15,        // 换行时额外增加的间距（5px * 3 = 15）
   startX: 63,            // 21 * 3
   startY: 81,            // 27 * 3
   maxLayersPerRow: 6     // 每行最多放置的层数量
@@ -125,10 +126,10 @@ function calculateSectionsLayout(network, layout) {
         // 检查是否需要换行
         const positionInRow = idx % LAYOUT_CONFIG.maxLayersPerRow;
         if (positionInRow === 0 && idx > 0) {
-          // 换行
+          // 换行，增加额外的换行间距
           rowCount++;
           currentX = rowStartX;
-          layerStartY += layerHeight + LAYOUT_CONFIG.layerGap;
+          layerStartY += layerHeight + LAYOUT_CONFIG.layerGap + LAYOUT_CONFIG.rowWrapGap;
         }
 
         const layer = {

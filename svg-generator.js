@@ -265,6 +265,69 @@ function generateSectionRowConnection(conn) {
   return `<path d="M${conn.fromX} ${conn.fromY} L${conn.fromX} ${conn.midY} L${conn.toX} ${conn.midY} L${conn.toX} ${conn.toY}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`;
 }
 
+/**
+ * 生成错误提示 SVG
+ * @param {string} errorMessage - 错误信息
+ * @returns {string} SVG 字符串
+ */
+function generateErrorSvg(errorMessage) {
+  const width = 600;
+  const height = 200;
+  const scale = SVG_CONFIG.scale;
+
+  const svgParts = [];
+  svgParts.push(`<svg viewBox="0 0 ${width} ${height}" width="${width * scale}" height="${height * scale}" xmlns="http://www.w3.org/2000/svg">`);
+
+  // 白色背景
+  svgParts.push(`<rect width="${width}" height="${height}" fill="#ffffff"/>`);
+
+  // 错误框背景
+  svgParts.push(`<rect x="30" y="30" width="${width - 60}" height="${height - 60}" fill="#f8d7da" stroke="#f5a5a5" stroke-width="3" rx="15"/>`);
+
+  // 错误图标（感叹号）
+  const iconX = 60;
+  const iconY = 70;
+  svgParts.push(`<circle cx="${iconX}" cy="${iconY}" r="25" fill="#dc3545"/>`);
+  svgParts.push(`<text x="${iconX}" y="${iconY + 8}" text-anchor="middle" font-size="36" font-weight="bold" font-family="Arial, sans-serif" fill="#fff">!</text>`);
+
+  // 错误标题
+  svgParts.push(`<text x="100" y="75" font-size="28" font-weight="bold" font-family="Arial, sans-serif" fill="#721c24">生成错误</text>`);
+
+  // 错误信息（换行处理）
+  const lines = wrapText(errorMessage, 50);
+  let textY = 110;
+  lines.forEach(line => {
+    svgParts.push(`<text x="100" y="${textY}" font-size="18" font-family="Arial, sans-serif" fill="#721c24">${line}</text>`);
+    textY += 24;
+  });
+
+  // 提示信息
+  svgParts.push(`<text x="${width / 2}" y="${height - 20}" text-anchor="middle" font-size="14" font-family="Arial, sans-serif" fill="#999">请检查 YAML 格式是否正确</text>`);
+
+  svgParts.push('</svg>');
+
+  return svgParts.join('\n');
+}
+
+/**
+ * 文本换行辅助函数
+ * @param {string} text - 原始文本
+ * @param {number} maxChars - 每行最大字符数
+ * @returns {array} 分行后的文本数组
+ */
+function wrapText(text, maxChars) {
+  const lines = [];
+  let remaining = text;
+  while (remaining.length > maxChars) {
+    lines.push(remaining.substring(0, maxChars));
+    remaining = remaining.substring(maxChars);
+  }
+  if (remaining.length > 0) {
+    lines.push(remaining);
+  }
+  return lines;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     generateSvg,
@@ -275,6 +338,8 @@ if (typeof module !== 'undefined' && module.exports) {
     generateLayerContent,
     generateConnection,
     generateRowConnection,
+    generateSectionRowConnection,
+    generateErrorSvg,
     getDisplayName,
     getLayerDetail,
     COLORS,

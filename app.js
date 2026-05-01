@@ -42,7 +42,11 @@ function handleGenerate() {
   const yamlText = yamlInput.value.trim();
 
   if (!yamlText) {
-    showError('请输入 YAML 格式的网络定义');
+    // 生成错误 SVG
+    const errorSvg = generateErrorSvg('请输入 YAML 格式的网络定义');
+    svgPreview.innerHTML = errorSvg;
+    currentSvgContent = '';
+    downloadBtn.disabled = true;
     return;
   }
 
@@ -70,8 +74,15 @@ function handleGenerate() {
     downloadBtn.disabled = false;
 
   } catch (e) {
-    showError(e.message);
+    // 生成错误 SVG 并显示在预览区域
+    const errorSvg = generateErrorSvg(e.message);
+    svgPreview.innerHTML = errorSvg;
+    currentSvgContent = '';
+    currentNetworkName = '';
     downloadBtn.disabled = true;
+
+    // 同时显示底部错误信息
+    showError(e.message);
   }
 }
 
@@ -166,9 +177,13 @@ function updateZoomDisplay() {
 function applyZoom() {
   const svgElement = svgPreview.querySelector('svg');
   if (svgElement) {
-    // 使用 CSS transform 缩放
+    // 使用 CSS transform 缩放，从左上角开始
     svgElement.style.transform = `scale(${currentZoom / 100})`;
-    svgElement.style.transformOrigin = 'center center';
+    svgElement.style.transformOrigin = 'top left';
+
+    // 重置滚动位置到左上角
+    svgPreview.scrollLeft = 0;
+    svgPreview.scrollTop = 0;
   }
 }
 
