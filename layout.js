@@ -5,17 +5,17 @@
 
 // 样式参数常量
 const LAYOUT_CONFIG = {
-  layerWidth: 120,
-  layerHeight: 70,
-  layerGap: 15,
-  arrowLength: 15,
-  sectionPadding: 10,
-  fontSizeName: 14,
-  fontSizeDetail: 12,
-  fontSizeTitle: 20,
-  fontSizeSection: 14,
-  startX: 10,
-  startY: 20
+  layerWidth: 72,
+  layerHeight: 42,
+  layerGap: 9,
+  arrowLength: 9,
+  sectionPadding: 9,
+  fontSizeName: 8.4,
+  fontSizeDetail: 7.2,
+  fontSizeTitle: 12,
+  fontSizeSection: 8.4,
+  startX: 21,
+  startY: 27
 };
 
 /**
@@ -75,6 +75,9 @@ function calculateHorizontalLayout(network, layout) {
   layout.width = lastLayer ? lastLayer.x + lastLayer.width + LAYOUT_CONFIG.startX : LAYOUT_CONFIG.startX * 2;
   layout.height = currentY + layerHeight + LAYOUT_CONFIG.startY;
 
+  // 计算标题居中位置
+  layout.title.x = layout.width / 2;
+
   // 计算连接箭头位置
   layout.connections = calculateConnections(layout.layers);
 
@@ -90,7 +93,7 @@ function calculateHorizontalLayout(network, layout) {
         const maxX = Math.max(...sectionLayers.map(l => l.x + l.width)) + LAYOUT_CONFIG.sectionPadding;
         // 计算包含标题的区域，确保不超过标题位置
         const titleBottom = LAYOUT_CONFIG.fontSizeTitle + 5;
-        const calculatedMinY = Math.min(...sectionLayers.map(l => l.y)) - LAYOUT_CONFIG.sectionPadding - LAYOUT_CONFIG.fontSizeSection;
+        const calculatedMinY = Math.min(...sectionLayers.map(l => l.y)) - LAYOUT_CONFIG.sectionPadding - LAYOUT_CONFIG.fontSizeSection - 6;
         const minY = Math.max(titleBottom, calculatedMinY);
         const maxY = Math.max(...sectionLayers.map(l => l.y + l.height)) + LAYOUT_CONFIG.sectionPadding;
 

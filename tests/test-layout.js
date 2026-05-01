@@ -20,12 +20,12 @@ test('计算简单网络层位置（水平布局）', function() {
 
   // 检查第一层位置
   const layerA = layout.layers.find(l => l.name === 'A');
-  assertEqual(layerA.x, 10, 'A 层 x 坐标');
-  assertEqual(layerA.y, 20, 'A 层 y 坐标');
+  assertEqual(layerA.x, 21, 'A 层 x 坐标');
+  assertEqual(layerA.y, 27, 'A 层 y 坐标');
 
   // 检查层间距
   const layerB = layout.layers.find(l => l.name === 'B');
-  assertEqual(layerB.x - layerA.x, 135, 'A-B 层间距（120宽度 + 15间距）');
+  assertEqual(layerB.x - layerA.x, 81, 'A-B 层间距（72宽度 + 9间距）');
 });
 
 test('计算垂直布局', function() {
@@ -53,7 +53,7 @@ test('计算垂直布局', function() {
   assertEqual(layerInput.x, layerHidden.x, '垂直布局 x 坐标相同');
 
   // y 坐标应该有间距
-  assertEqual(layerHidden.y - layerInput.y, 85, '垂直布局层间距（70高度 + 15间距）');
+  assertEqual(layerHidden.y - layerInput.y, 51, '垂直布局层间距（42高度 + 9间距）');
 });
 
 test('计算连接箭头位置（水平布局）', function() {
@@ -79,8 +79,8 @@ test('计算连接箭头位置（水平布局）', function() {
   assertEqual(conn.type, 'sequential', '连接类型');
 
   // 箭头起点在 A 层右侧中间
-  assertEqual(conn.x1, 130, '箭头起点 x'); // 10 + 120
-  assertEqual(conn.y1, 55, '箭头起点 y'); // 20 + 70/2
+  assertEqual(conn.x1, 93, '箭头起点 x'); // 21 + 72
+  assertEqual(conn.y1, 48, '箭头起点 y'); // 27 + 42/2
 });
 
 test('计算布局总尺寸', function() {
@@ -101,12 +101,12 @@ test('计算布局总尺寸', function() {
   const layout = calculateLayout(network);
 
   // 总宽度 = startX + 3层 + 2间距 + startX
-  // = 10 + 3*120 + 2*15 + 10 = 410
-  assertEqual(layout.width, 410, '总宽度');
+  // = 21 + 3*72 + 2*9 + 21 = 276
+  assertEqual(layout.width, 276, '总宽度');
 
   // 总高度 = startY + 层高度 + startY
-  // = 20 + 70 + 20 = 110
-  assertEqual(layout.height, 110, '总高度');
+  // = 27 + 42 + 27 = 96
+  assertEqual(layout.height, 96, '总高度');
 });
 
 test('处理空网络', function() {
@@ -126,11 +126,11 @@ test('处理空网络', function() {
 });
 
 test('布局配置常量正确', function() {
-  assertEqual(LAYOUT_CONFIG.layerWidth, 120, '层宽度');
-  assertEqual(LAYOUT_CONFIG.layerHeight, 70, '层高度');
-  assertEqual(LAYOUT_CONFIG.layerGap, 15, '层间距');
-  assertEqual(LAYOUT_CONFIG.startX, 10, '起始 X 坐标');
-  assertEqual(LAYOUT_CONFIG.startY, 20, '起始 Y 坐标');
+  assertEqual(LAYOUT_CONFIG.layerWidth, 72, '层宽度');
+  assertEqual(LAYOUT_CONFIG.layerHeight, 42, '层高度');
+  assertEqual(LAYOUT_CONFIG.layerGap, 9, '层间距');
+  assertEqual(LAYOUT_CONFIG.startX, 21, '起始 X 坐标');
+  assertEqual(LAYOUT_CONFIG.startY, 27, '起始 Y 坐标');
 });
 
 test('计算 sections 分组区域位置', function() {
@@ -159,6 +159,6 @@ test('计算 sections 分组区域位置', function() {
   // 第一个 section 应包含 Input, Conv1, Conv2
   const section1 = layout.sections[0];
   assertEqual(section1.name, '特征提取器', 'section 名称');
-  assertEqual(section1.x, 0, 'section x 起点');
-  assertEqual(section1.y, 25, 'section y 起点');
+  assertEqual(section1.x, 12, 'section x 起点'); // 21 - 9 (padding)
+  assertEqual(section1.y, 17, 'section y 起点'); // titleBottom (17)
 });

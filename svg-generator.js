@@ -20,13 +20,13 @@ const COLORS = {
 
 // 样式配置
 const SVG_CONFIG = {
-  fontSizeName: 14,
-  fontSizeDetail: 12,
-  fontSizeTitle: 20,
-  fontSizeSection: 14,
-  cornerRadius: 6,
-  strokeWidth: 1,
-  arrowWidth: 1
+  fontSizeName: 8.4,
+  fontSizeDetail: 7.2,
+  fontSizeTitle: 12,
+  fontSizeSection: 8.4,
+  cornerRadius: 4.8,
+  strokeWidth: 1.2,
+  arrowWidth: 0.9
 };
 
 /**
@@ -76,8 +76,8 @@ function generateSvg(layout) {
 function generateDefs() {
   return `
   <defs>
-    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#999"/>
+    <marker id="arrowhead" markerWidth="4.8" markerHeight="3.6" refX="4.2" refY="1.8" orient="auto">
+      <polygon points="0 0, 4.8 1.8, 0 3.6" fill="#999"/>
     </marker>
   </defs>`;
 }
@@ -93,7 +93,7 @@ function generateTitle(title) {
  * 生成 section 区域框
  */
 function generateSection(section) {
-  return `<rect x="${section.x}" y="${section.y}" width="${section.width}" height="${section.height}" fill="none" stroke="#b8d8e8" stroke-width="1" stroke-dasharray="5,5" rx="${SVG_CONFIG.cornerRadius}"/>
+  return `<rect x="${section.x}" y="${section.y}" width="${section.width}" height="${section.height}" fill="none" stroke="#b8d8e8" stroke-width="1.2" stroke-dasharray="3,3" rx="6"/>
 <text x="${section.x + section.width / 2}" y="${section.y + SVG_CONFIG.fontSizeSection}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeSection}" font-family="Arial, sans-serif" fill="#5a7d9a">${section.name}</text>`;
 }
 
@@ -117,11 +117,11 @@ function generateLayerContent(layer) {
   const data = layer.data;
 
   // 层名称
-  const nameY = layer.y + 20;
+  const nameY = layer.y + 9;
   let content = `<text x="${centerX}" y="${nameY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeName}" font-weight="bold" font-family="Arial, sans-serif" fill="#333">${layer.name}</text>`;
 
   // 参数详情
-  const detailY = layer.y + 38;
+  const detailY = layer.y + 21;
   const detail = getLayerDetail(layer);
   if (detail) {
     content += `<text x="${centerX}" y="${detailY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#666">${detail}</text>`;
@@ -129,13 +129,13 @@ function generateLayerContent(layer) {
 
   // 输出尺寸
   if (data.out) {
-    const outY = layer.y + 52;
+    const outY = layer.y + 30;
     content += `<text x="${centerX}" y="${outY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#666">${data.out}</text>`;
   }
 
   // 激活函数
   if (data.act) {
-    const actY = layer.y + 66;
+    const actY = layer.y + 37.8;
     content += `<text x="${centerX}" y="${actY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#27ae60">${data.act}</text>`;
   }
 
