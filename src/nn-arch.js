@@ -106,7 +106,7 @@ const NNArch = {
   /**
    * 版本信息
    */
-  version: '1.0.3'
+  version: '1.0.4'
 };
 
 // 导出模块（支持 Node.js 和浏览器）

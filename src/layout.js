@@ -20,7 +20,7 @@ const LAYOUT_CONFIG = {
   rowWrapGap: 20,        // 换行时额外增加的间距
   startX: 63,            // 21 * 3
   startY: 81,            // 27 * 3 - 顶部边距
-  bottomPadding: 36,     // 12 * 3 - 底部边距（不超过12px）
+  bottomPadding: 6,      // 2 * 3 - 底部边距（不超过2px）
   maxLayersPerRow: 6     // 每行最多放置的层数量
 };
 
