@@ -56,6 +56,31 @@ test('计算垂直布局', function() {
   assertEqual(layerHidden.y - layerInput.y, 51, '垂直布局层间距（42高度 + 9间距）');
 });
 
+test('计算垂直布局层位置', function() {
+  const network = {
+    name: 'VerticalNet',
+    layout: 'vertical',
+    layers: [
+      {name: 'A', type: 'input', size: '10'},
+      {name: 'B', type: 'conv', kernel: 3, channels: 64},
+      {name: 'C', type: 'output', size: 10}
+    ],
+    sections: [],
+    blocks: [],
+    connections: [],
+    layersAfterBlocks: []
+  };
+
+  const layout = calculateLayout(network);
+  const layerA = layout.layers.find(l => l.name === 'A');
+  const layerB = layout.layers.find(l => l.name === 'B');
+
+  // 垂直布局中，x 坐标相同，y 坐标递增
+  assertEqual(layerA.x, 21, 'A 层 x 坐标');
+  assertEqual(layerB.x, 21, 'B 层 x 坐标（垂直布局 x 相同）');
+  assertEqual(layerB.y - layerA.y, 51, 'A-B 层间距（42高度 + 9间距）');
+});
+
 test('计算连接箭头位置（水平布局）', function() {
   const network = {
     name: 'ConnectNet',
