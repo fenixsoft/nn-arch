@@ -160,4 +160,6 @@ function getTemplate(key) {
   return TEMPLATES[key] ? TEMPLATES[key].template : '';
 }
 
-module.exports = { TEMPLATES, getTemplateList, getTemplate };
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { TEMPLATES, getTemplateList, getTemplate };
+}

@@ -172,7 +172,9 @@ function calculateConnections(layers, direction = 'horizontal') {
 }
 
 // 导出模块
-module.exports = {
-  calculateLayout,
-  LAYOUT_CONFIG
-};
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    calculateLayout,
+    LAYOUT_CONFIG
+  };
+}

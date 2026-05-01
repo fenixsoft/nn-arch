@@ -178,15 +178,17 @@ function generateConnection(conn) {
   return '';
 }
 
-module.exports = {
-  generateSvg,
-  generateDefs,
-  generateTitle,
-  generateSection,
-  generateLayer,
-  generateLayerContent,
-  generateConnection,
-  getLayerDetail,
-  COLORS,
-  SVG_CONFIG
-};
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    generateSvg,
+    generateDefs,
+    generateTitle,
+    generateSection,
+    generateLayer,
+    generateLayerContent,
+    generateConnection,
+    getLayerDetail,
+    COLORS,
+    SVG_CONFIG
+  };
+}
