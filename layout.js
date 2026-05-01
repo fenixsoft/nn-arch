@@ -3,22 +3,22 @@
  * 计算网络各层在 SVG 中的位置坐标
  */
 
-// 样式参数常量（放大 250%）
+// 样式参数常量（放大 300%）
 const LAYOUT_CONFIG = {
-  layerWidth: 180,       // 72 * 2.5
-  layerHeight: 105,      // 42 * 2.5
-  layerGap: 22.5,        // 9 * 2.5
-  arrowLength: 22.5,     // 9 * 2.5
-  sectionPadding: 22.5,  // 9 * 2.5
-  fontSizeName: 21,      // 8.4 * 2.5
-  fontSizeDetail: 18,    // 7.2 * 2.5
-  fontSizeTitle: 30,     // 12 * 2.5
-  fontSizeSection: 21,   // 8.4 * 2.5
-  titleGap: 15,          // 标题与内容的间隙
-  sectionTitleGap: 12,   // section 标题与层之间的间隙
-  rowGap: 60,            // 行间距（用于换行时的连线区域）
-  startX: 52.5,          // 21 * 2.5
-  startY: 67.5           // 27 * 2.5
+  layerWidth: 216,       // 72 * 3
+  layerHeight: 126,      // 42 * 3
+  layerGap: 27,          // 9 * 3
+  arrowLength: 27,       // 9 * 3
+  sectionPadding: 27,    // 9 * 3
+  fontSizeName: 25.2,    // 8.4 * 3
+  fontSizeDetail: 21.6,  // 7.2 * 3
+  fontSizeTitle: 36,     // 12 * 3
+  fontSizeSection: 25.2, // 8.4 * 3
+  titleGap: 18,          // 标题与内容的间隙
+  sectionTitleGap: 15,   // section 标题与层之间的间隙
+  rowGap: 72,            // 行间距（用于换行时的连线区域）
+  startX: 63,            // 21 * 3
+  startY: 81             // 27 * 3
 };
 
 /**
@@ -160,7 +160,7 @@ function calculateSectionsLayout(network, layout) {
   // 计算各 section 内的连接
   layout.connections = calculateConnections(layout.layers);
 
-  // 计算行间连接（从一个 section 的最后一层到下一个 section 的第一层）
+  // 计算行间连接（折线：从上一section底部到下一section顶部）
   for (let i = 0; i < layout.sections.length - 1; i++) {
     const currentSection = layout.sections[i];
     const nextSection = layout.sections[i + 1];
@@ -173,22 +173,28 @@ function calculateSectionsLayout(network, layout) {
       const fromLayer = currentSectionLayers[currentSectionLayers.length - 1];
       const toLayer = nextSectionLayers[0];
 
-      // 计算连线位置（垂直连线）
+      // 折线连接的关键点
       const fromX = fromLayer.x + fromLayer.width / 2;
       const fromY = fromLayer.y + fromLayer.height;
-      const toX = toLayer.x + toLayer.width / 2;
-      const toY = toLayer.y;
+
+      // 下一个 section 顶部中心位置（箭头指向这里，不穿越）
+      const toX = nextSection.x + nextSection.width / 2;
+      const toY = nextSection.y;  // section 顶部边缘
+
+      // 中间转折点：在两个 section 之间的空白区域
+      const midY = fromY + (toY - fromY) / 2;
 
       layout.rowConnections.push({
         from: fromLayer.name,
         to: toLayer.name,
-        x1: fromX,
-        y1: fromY,
-        x2: toX,
-        y2: toY,
+        fromX: fromX,
+        fromY: fromY,
+        midY: midY,
+        toX: toX,
+        toY: toY,
         label: `Flatten: ${calculateFlattenSize(fromLayer.data)}`,
-        labelX: fromX + LAYOUT_CONFIG.layerGap,
-        labelY: fromY + (toY - fromY) / 2
+        labelX: Math.max(fromX, toX) + LAYOUT_CONFIG.layerGap,
+        labelY: midY
       });
     }
   }
@@ -221,7 +227,7 @@ function calculateFlattenSize(layerData) {
  */
 function calculateVerticalLayout(network, layout) {
   let currentX = LAYOUT_CONFIG.startX;
-  let currentY = layout.title.y + 15;
+  let currentY = layout.title.y + 18;
   const layerWidth = LAYOUT_CONFIG.layerWidth;
   const layerHeight = LAYOUT_CONFIG.layerHeight;
 

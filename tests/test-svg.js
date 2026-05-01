@@ -7,7 +7,7 @@ test('生成简单网络 SVG', function() {
     title: { x: 200, y: 25, text: 'SimpleNet' },
     sections: [],
     layers: [
-      {name: 'Input', type: 'input', x: 10, y: 40, width: 180, height: 105, data: {size: '10'}}
+      {name: 'Input', type: 'input', x: 10, y: 40, width: 216, height: 126, data: {size: '10'}}
     ],
     connections: [],
     rowConnections: [],
@@ -27,11 +27,11 @@ test('SVG 包含箭头定义', function() {
     title: { x: 200, y: 25, text: 'Test' },
     sections: [],
     layers: [
-      {name: 'A', type: 'input', x: 10, y: 40, width: 180, height: 105, data: {}},
-      {name: 'B', type: 'output', x: 212.5, y: 40, width: 180, height: 105, data: {}}
+      {name: 'A', type: 'input', x: 10, y: 40, width: 216, height: 126, data: {}},
+      {name: 'B', type: 'output', x: 253, y: 40, width: 216, height: 126, data: {}}
     ],
     connections: [
-      {from: 'A', to: 'B', x1: 190, y1: 92.5, x2: 212.5, y2: 92.5, type: 'sequential'}
+      {from: 'A', to: 'B', x1: 226, y1: 103, x2: 253, y2: 103, type: 'sequential'}
     ],
     rowConnections: [],
     blocks: []
@@ -47,7 +47,7 @@ test('卷积层包含蓝色样式', function() {
     width: 200, height: 120,
     title: { x: 100, y: 25, text: 'Test' },
     sections: [],
-    layers: [{name: 'Conv1', type: 'conv', x: 10, y: 40, width: 180, height: 105, data: {kernel: 3, channels: 64}}],
+    layers: [{name: 'Conv1', type: 'conv', x: 10, y: 40, width: 216, height: 126, data: {kernel: 3, channels: 64}}],
     connections: [],
     rowConnections: [],
     blocks: []
@@ -62,7 +62,7 @@ test('全连接层包含绿色样式', function() {
     width: 200, height: 120,
     title: { x: 100, y: 25, text: 'Test' },
     sections: [],
-    layers: [{name: 'FC1', type: 'fc', x: 10, y: 40, width: 180, height: 105, data: {size: 1000}}],
+    layers: [{name: 'FC1', type: 'fc', x: 10, y: 40, width: 216, height: 126, data: {size: 1000}}],
     connections: [],
     rowConnections: [],
     blocks: []
@@ -70,6 +70,25 @@ test('全连接层包含绿色样式', function() {
   const svg = generateSvg(layout);
   assertEqual(svg.includes('#e8f8f0'), true, '包含FC层背景色');
   assertEqual(svg.includes('#5bd9a5'), true, '包含FC层边框色');
+});
+
+test('section标题为粗体', function() {
+  const layout = {
+    width: 500, height: 200,
+    title: { x: 250, y: 30, text: 'Test' },
+    sections: [{
+      name: '特征提取器',
+      x: 10, y: 50, width: 480, height: 100,
+      titleY: 60,
+      strokeColor: '#b8d8e8'
+    }],
+    layers: [],
+    connections: [],
+    rowConnections: [],
+    blocks: []
+  };
+  const svg = generateSvg(layout);
+  assertEqual(svg.includes('font-weight="bold"'), true, 'section标题包含粗体样式');
 });
 
 // === 模板 SVG 生成测试 ===
@@ -124,8 +143,10 @@ layers:
   assertEqual(svg.includes('#e8f4f8'), true, 'VGG16 SVG 包含卷积层颜色');
   assertEqual(svg.includes('#f0e8f8'), true, 'VGG16 SVG 包含池化层颜色');
   assertEqual(svg.includes('#e8f8f0'), true, 'VGG16 SVG 包含全连接层颜色');
-  // 验证放大 250%（显示尺寸大于 viewBox）
+  // 验证放大 300%（显示尺寸大于 viewBox）
   assertEqual(svg.includes('width="'), true, 'VGG16 SVG 包含显示宽度');
+  // 验证折线连接（包含 L 命令多次）
+  assertEqual(svg.includes('L'), true, 'VGG16 SVG 包含折线');
 });
 
 test('生成 ResNet18 模板 SVG', function() {

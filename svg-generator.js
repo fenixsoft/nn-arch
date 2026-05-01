@@ -18,16 +18,17 @@ const COLORS = {
   identity: { fill: '#f8f8f8', stroke: '#999999' }
 };
 
-// 样式配置（放大 250%）
+// 样式配置（放大 300%）
 const SVG_CONFIG = {
-  fontSizeName: 21,      // 8.4 * 2.5
-  fontSizeDetail: 18,    // 7.2 * 2.5
-  fontSizeTitle: 30,     // 12 * 2.5
-  fontSizeSection: 21,   // 8.4 * 2.5
-  cornerRadius: 12,      // 4.8 * 2.5
-  strokeWidth: 3,        // 1.2 * 2.5
-  arrowWidth: 2.25,      // 0.9 * 2.5
-  scale: 2.5             // 显示放大倍数
+  fontSizeName: 25.2,    // 8.4 * 3
+  fontSizeDetail: 21.6,  // 7.2 * 3
+  fontSizeTitle: 36,     // 12 * 3
+  fontSizeSection: 25.2, // 8.4 * 3
+  cornerRadius: 14.4,    // 4.8 * 3
+  strokeWidth: 3.6,      // 1.2 * 3
+  arrowWidth: 2.7,       // 0.9 * 3
+  scale: 3,              // 显示放大倍数
+  nameGap: 12            // name 上下的额外空隙 (4px * 3)
 };
 
 /**
@@ -39,7 +40,7 @@ function generateSvg(layout) {
   const svgParts = [];
   const scale = SVG_CONFIG.scale;
 
-  // 计算显示尺寸（放大 250%）
+  // 计算显示尺寸（放大 300%）
   const displayWidth = Math.round(layout.width * scale);
   const displayHeight = Math.round(layout.height * scale);
 
@@ -102,13 +103,13 @@ function generateTitle(title) {
 }
 
 /**
- * 生成 section 区域框
+ * 生成 section 区域框（标题粗体）
  */
 function generateSection(section) {
   const strokeColor = section.strokeColor || '#b8d8e8';
   const titleY = section.titleY || (section.y + SVG_CONFIG.fontSizeSection);
-  return `<rect x="${section.x}" y="${section.y}" width="${section.width}" height="${section.height}" fill="none" stroke="${strokeColor}" stroke-width="${SVG_CONFIG.strokeWidth}" stroke-dasharray="${7.5},${7.5}" rx="${SVG_CONFIG.cornerRadius * 1.25}"/>
-<text x="${section.x + section.width / 2}" y="${titleY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeSection}" font-family="Arial, sans-serif" fill="#5a7d9a">${section.name}</text>`;
+  return `<rect x="${section.x}" y="${section.y}" width="${section.width}" height="${section.height}" fill="none" stroke="${strokeColor}" stroke-width="${SVG_CONFIG.strokeWidth}" stroke-dasharray="${9},${9}" rx="${SVG_CONFIG.cornerRadius * 1.25}"/>
+<text x="${section.x + section.width / 2}" y="${titleY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeSection}" font-weight="bold" font-family="Arial, sans-serif" fill="#5a7d9a">${section.name}</text>`;
 }
 
 /**
@@ -124,18 +125,18 @@ ${content}`;
 }
 
 /**
- * 生成层内容文本
+ * 生成层内容文本（name上下增加空隙）
  */
 function generateLayerContent(layer) {
   const centerX = layer.x + layer.width / 2;
   const data = layer.data;
 
-  // 层名称
-  const nameY = layer.y + SVG_CONFIG.fontSizeName + 3;
+  // 层名称（上方增加空隙）
+  const nameY = layer.y + SVG_CONFIG.nameGap + SVG_CONFIG.fontSizeName;
   let content = `<text x="${centerX}" y="${nameY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeName}" font-weight="bold" font-family="Arial, sans-serif" fill="#333">${layer.name}</text>`;
 
-  // 参数详情
-  const detailY = nameY + SVG_CONFIG.fontSizeDetail + 3;
+  // 参数详情（name下方增加空隙）
+  const detailY = nameY + SVG_CONFIG.nameGap + SVG_CONFIG.fontSizeDetail;
   const detail = getLayerDetail(layer);
   if (detail) {
     content += `<text x="${centerX}" y="${detailY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#666">${detail}</text>`;
@@ -192,11 +193,12 @@ function generateConnection(conn) {
 }
 
 /**
- * 生成行间连接（带标注）
+ * 生成行间连接（折线：不穿越section）
  */
 function generateRowConnection(conn) {
-  // 垂直连线
-  const path = `<path d="M${conn.x1} ${conn.y1} L${conn.x2} ${conn.y2}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`;
+  // 折线路径：从from层底部 -> 向下到中间 -> 水平移动 -> 向下到section顶部（箭头指向这里）
+  // 使用 SVG path 的 L 命令绘制折线
+  const path = `<path d="M${conn.fromX} ${conn.fromY} L${conn.fromX} ${conn.midY} L${conn.toX} ${conn.midY} L${conn.toX} ${conn.toY}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`;
 
   // 标注文本
   const label = `<text x="${conn.labelX}" y="${conn.labelY}" text-anchor="start" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#666">${conn.label}</text>`;
