@@ -11,18 +11,21 @@ layout: horizontal
 
 sections:
   - name: 特征提取器
-    layers: [Input, Conv1, Conv2, Conv3, Conv4, Conv5]
+    layers: [Input, Conv1, Pool1, Conv2, Pool2, Conv3, Conv4, Conv5, Pool5]
     row_label: "Flatten: 9216"
   - name: 分类器
     layers: [FC1, FC2, FC3, Output]
 
 layers:
   - {name: Input, type: input, size: "224x224x3"}
-  - {name: Conv1, type: conv, kernel: 11, stride: 4, channels: 96, out: "55x55x96", act: ReLU, pool: {kernel: 3, stride: 2}}
-  - {name: Conv2, type: conv, kernel: 5, stride: 1, channels: 256, out: "27x27x256", act: ReLU, pool: {kernel: 3, stride: 2}}
+  - {name: Conv1, type: conv, kernel: 11, stride: 4, channels: 96, out: "55x55x96", act: ReLU}
+  - {name: Pool1, type: pool, kernel: 3, stride: 2, out: "27x27x96"}
+  - {name: Conv2, type: conv, kernel: 5, stride: 1, channels: 256, out: "27x27x256", act: ReLU}
+  - {name: Pool2, type: pool, kernel: 3, stride: 2, out: "13x13x256"}
   - {name: Conv3, type: conv, kernel: 3, stride: 1, channels: 384, out: "13x13x384", act: ReLU}
   - {name: Conv4, type: conv, kernel: 3, stride: 1, channels: 384, out: "13x13x384", act: ReLU}
-  - {name: Conv5, type: conv, kernel: 3, stride: 1, channels: 256, out: "13x13x256", act: ReLU, pool: {kernel: 3, stride: 2}}
+  - {name: Conv5, type: conv, kernel: 3, stride: 1, channels: 256, out: "13x13x256", act: ReLU}
+  - {name: Pool5, type: pool, kernel: 3, stride: 2, out: "6x6x256"}
   - {name: FC1, type: fc, size: 4096, act: ReLU, dropout: true}
   - {name: FC2, type: fc, size: 4096, act: ReLU, dropout: true}
   - {name: FC3, type: fc, size: 1000}

@@ -11,10 +11,15 @@ const generateBtn = document.getElementById('generateBtn');
 const clearBtn = document.getElementById('clearBtn');
 const downloadBtn = document.getElementById('downloadBtn');
 const templateDropdown = document.getElementById('templateDropdown');
+const zoomInBtn = document.getElementById('zoomInBtn');
+const zoomOutBtn = document.getElementById('zoomOutBtn');
+const zoomResetBtn = document.getElementById('zoomResetBtn');
+const zoomLevel = document.getElementById('zoomLevel');
 
 // 当前生成的 SVG 内容
 let currentSvgContent = '';
 let currentNetworkName = '';
+let currentZoom = 100;  // 当前缩放比例（百分比）
 
 /**
  * 初始化
@@ -25,6 +30,9 @@ function init() {
   clearBtn.addEventListener('click', handleClear);
   downloadBtn.addEventListener('click', handleDownload);
   templateDropdown.addEventListener('change', handleTemplateSelect);
+  zoomInBtn.addEventListener('click', handleZoomIn);
+  zoomOutBtn.addEventListener('click', handleZoomOut);
+  zoomResetBtn.addEventListener('click', handleZoomReset);
 }
 
 /**
@@ -52,6 +60,11 @@ function handleGenerate() {
     // 显示预览
     svgPreview.innerHTML = currentSvgContent;
 
+    // 重置缩放
+    currentZoom = 100;
+    updateZoomDisplay();
+    applyZoom();
+
     // 隐藏错误，启用下载
     hideError();
     downloadBtn.disabled = false;
@@ -70,6 +83,8 @@ function handleClear() {
   svgPreview.innerHTML = '<p class="placeholder-text">输入 YAML 后点击"生成 SVG"</p>';
   currentSvgContent = '';
   currentNetworkName = '';
+  currentZoom = 100;
+  updateZoomDisplay();
   hideError();
   downloadBtn.disabled = true;
   templateDropdown.value = '';
@@ -104,6 +119,56 @@ function handleTemplateSelect() {
     const template = getTemplate(key);
     yamlInput.value = template;
     hideError();
+  }
+}
+
+/**
+ * 放大
+ */
+function handleZoomIn() {
+  if (currentZoom < 500) {
+    currentZoom += 25;
+    updateZoomDisplay();
+    applyZoom();
+  }
+}
+
+/**
+ * 缩小
+ */
+function handleZoomOut() {
+  if (currentZoom > 25) {
+    currentZoom -= 25;
+    updateZoomDisplay();
+    applyZoom();
+  }
+}
+
+/**
+ * 重置缩放
+ */
+function handleZoomReset() {
+  currentZoom = 100;
+  updateZoomDisplay();
+  applyZoom();
+}
+
+/**
+ * 更新缩放显示
+ */
+function updateZoomDisplay() {
+  zoomLevel.textContent = `${currentZoom}%`;
+}
+
+/**
+ * 应用缩放到 SVG
+ */
+function applyZoom() {
+  const svgElement = svgPreview.querySelector('svg');
+  if (svgElement) {
+    // 使用 CSS transform 缩放
+    svgElement.style.transform = `scale(${currentZoom / 100})`;
+    svgElement.style.transformOrigin = 'center center';
   }
 }
 

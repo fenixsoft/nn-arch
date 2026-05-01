@@ -174,6 +174,42 @@ function calculateSectionsLayout(network, layout) {
   // 计算各 section 内的连接
   layout.connections = calculateConnections(layout.layers);
 
+  // 计算 section 内换行的折线连接
+  layout.sectionRowConnections = [];
+  layout.sections.forEach((section, sectionIndex) => {
+    const sectionLayers = layout.layers.filter(l => l.sectionIndex === sectionIndex);
+    if (section.rowCount > 1) {
+      // 有多行，需要计算行间连接
+      for (let row = 0; row < section.rowCount - 1; row++) {
+        const rowLayers = sectionLayers.filter(l => l.rowIndex === row);
+        const nextRowLayers = sectionLayers.filter(l => l.rowIndex === row + 1);
+
+        if (rowLayers.length > 0 && nextRowLayers.length > 0) {
+          const fromLayer = rowLayers[rowLayers.length - 1]; // 当前行最后一个
+          const toLayer = nextRowLayers[0]; // 下一行第一个
+
+          // 折线连接：从当前行最后元素底部 -> 中间 -> 下一行第一个元素顶部
+          const fromX = fromLayer.x + fromLayer.width / 2;
+          const fromY = fromLayer.y + fromLayer.height;
+          const toX = toLayer.x + toLayer.width / 2;
+          const toY = toLayer.y;
+          const midY = fromY + (toY - fromY) / 2;
+
+          layout.sectionRowConnections.push({
+            from: fromLayer.name,
+            to: toLayer.name,
+            fromX: fromX,
+            fromY: fromY,
+            midY: midY,
+            toX: toX,
+            toY: toY,
+            sectionIndex: sectionIndex
+          });
+        }
+      }
+    }
+  });
+
   // 计算行间连接（折线：从上一section底部到下一section顶部）
   for (let i = 0; i < layout.sections.length - 1; i++) {
     const currentSection = layout.sections[i];

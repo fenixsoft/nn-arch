@@ -76,6 +76,13 @@ function generateSvg(layout) {
     svgParts.push(generateConnection(conn));
   });
 
+  // section 内换行连接（折线）
+  if (layout.sectionRowConnections) {
+    layout.sectionRowConnections.forEach(conn => {
+      svgParts.push(generateSectionRowConnection(conn));
+    });
+  }
+
   // 行间连接（带标注）
   layout.rowConnections.forEach(conn => {
     svgParts.push(generateRowConnection(conn));
@@ -248,6 +255,14 @@ function generateRowConnection(conn) {
   }
 
   return path;
+}
+
+/**
+ * 生成 section 内换行连接（折线）
+ */
+function generateSectionRowConnection(conn) {
+  // 折线路径：从上一行最后元素 -> 向下到中间 -> 水平移动 -> 向上到下一行第一个元素
+  return `<path d="M${conn.fromX} ${conn.fromY} L${conn.fromX} ${conn.midY} L${conn.toX} ${conn.midY} L${conn.toX} ${conn.toY}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
