@@ -15,9 +15,9 @@ const LAYOUT_CONFIG = {
   fontSizeTitle: 36,     // 12 * 3
   fontSizeSection: 25.2, // 8.4 * 3
   titleGap: 18,          // 标题与内容的间隙
-  sectionTitleGap: 10,   // section 标题与层之间的间隙（减少5px：15-5=10）
-  rowGap: 87,            // 行间距（用于换行时的连线区域，增加5px：72+15=87）
-  rowWrapGap: 15,        // 换行时额外增加的间距（5px * 3 = 15）
+  sectionTitleGap: 5,    // section 标题与层之间的间隙
+  rowGap: 87,            // 行间距（用于换行时的连线区域）
+  rowWrapGap: 20,        // 换行时额外增加的间距
   startX: 63,            // 21 * 3
   startY: 81,            // 27 * 3
   maxLayersPerRow: 6     // 每行最多放置的层数量

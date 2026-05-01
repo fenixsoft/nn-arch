@@ -39,16 +39,16 @@ globalThis.assertDeepEqual = function(actual, expected, msg) {
 
 // 加载 parser.js (它会使用全局的 jsyaml)
 globalThis.jsyaml = jsyaml;
-const parser = require('../parser.js');
+const parser = require('../src/parser.js');
 globalThis.parseNetworkYaml = parser.parseNetworkYaml;
 
 // 加载 layout.js
-const layout = require('../layout.js');
+const layout = require('../src/layout.js');
 globalThis.calculateLayout = layout.calculateLayout;
 globalThis.LAYOUT_CONFIG = layout.LAYOUT_CONFIG;
 
 // 加载 svg-generator.js
-const svgGenerator = require('../svg-generator.js');
+const svgGenerator = require('../src/svg-generator.js');
 globalThis.generateSvg = svgGenerator.generateSvg;
 globalThis.generateDefs = svgGenerator.generateDefs;
 globalThis.generateTitle = svgGenerator.generateTitle;

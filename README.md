@@ -17,15 +17,16 @@
 ```
 nn-arch/
 ├── index.html          # 主页面（编辑器 + 预览）
-├── styles.css          # CSS 样式
-├── app.js              # 主逻辑（页面交互）
-├── parser.js           # YAML 解析器
-├── layout.js           # 布局算法
-├── svg-generator.js    # SVG 生成器
-├── templates.js        # 预置模板
-├── nn-arch.js          # 外部调用 API
-├── lib/
-│   └ js-yaml.min.js    # YAML 解析库（本地）
+├── src/                # 源代码目录
+│   ├── styles.css      # CSS 样式
+│   ├── app.js          # 主逻辑（页面交互）
+│   ├── parser.js       # YAML 解析器
+│   ├── layout.js       # 布局算法
+│   ├── svg-generator.js # SVG 生成器
+│   ├── templates.js    # 预置模板
+│   ├── nn-arch.js      # 外部调用 API
+│   └── lib/
+│     └ js-yaml.min.js  # YAML 解析库（本地）
 └── tests/              # 测试文件
 ```
 
@@ -47,12 +48,12 @@ nn-arch/
 
 ```html
 <!-- 引入依赖 -->
-<script src="lib/js-yaml.min.js"></script>
-<script src="parser.js"></script>
-<script src="layout.js"></script>
-<script src="svg-generator.js"></script>
-<script src="templates.js"></script>
-<script src="nn-arch.js"></script>
+<script src="src/lib/js-yaml.min.js"></script>
+<script src="src/parser.js"></script>
+<script src="src/layout.js"></script>
+<script src="src/svg-generator.js"></script>
+<script src="src/templates.js"></script>
+<script src="src/nn-arch.js"></script>
 
 <!-- 使用 API -->
 <script>
