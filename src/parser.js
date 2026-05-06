@@ -76,6 +76,36 @@ function parseNetworkYaml(yamlText) {
     rowLabels: parsed.row_labels || []  // 行间连接标注
   };
 
+  // 验证 block 内部层 id 唯一性
+  for (const block of network.blocks) {
+    const blockLayerIds = new Set();
+
+    const validateBlockLayerId = (layer) => {
+      if (!layer || !layer.id) return;
+      if (blockLayerIds.has(layer.id)) {
+        throw new Error(`Block "${block.name}" 内部层 id 重复: "${layer.id}"`);
+      }
+      blockLayerIds.add(layer.id);
+    };
+
+    // 验证 main 路径
+    block.main.forEach(validateBlockLayerId);
+
+    // 验证 branches
+    if (block.branches) {
+      block.branches.forEach(branch => {
+        if (Array.isArray(branch)) {
+          branch.forEach(validateBlockLayerId);
+        } else {
+          validateBlockLayerId(branch);
+        }
+      });
+    }
+
+    // 验证 stack layers
+    block.layers.forEach(validateBlockLayerId);
+  }
+
   // 处理 sections，将层名称转换为 id
   if (parsed.sections) {
     network.sections = parsed.sections.map(s => normalizeSection(s, network.layers));

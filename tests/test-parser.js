@@ -415,6 +415,43 @@ blocks:
   assertEqual(block.style, 'arc', '默认 style 为 arc');
 });
 
+test('block 内部层 id 重复时报错', function() {
+  const yaml = `
+blocks:
+  - name: TestBlock
+    type: residual
+    main:
+      - {id: dup_id, name: conv1, type: conv, kernel: 3, channels: 64}
+      - {id: dup_id, name: conv2, type: conv, kernel: 3, channels: 64}
+    skip: identity
+    merge: add
+`;
+  try {
+    parseNetworkYaml(yaml);
+    throw new Error('应该抛出异常但没有');
+  } catch (e) {
+    if (!e.message.includes('内部层 id 重复')) {
+      throw new Error('错误信息应包含内部层 id 重复: ' + e.message);
+    }
+  }
+});
+
+test('block 内部不同路径 id 不重复时正常解析', function() {
+  const yaml = `
+blocks:
+  - name: TestBlock
+    type: residual
+    main:
+      - {id: main1, name: conv1, type: conv, kernel: 3, channels: 64}
+      - {id: main2, name: conv2, type: conv, kernel: 3, channels: 64}
+    skip: identity
+    merge: add
+`;
+  const result = parseNetworkYaml(yaml);
+  assertEqual(result.blocks[0].main[0].id, 'main1', 'main 第一个层 id');
+  assertEqual(result.blocks[0].main[1].id, 'main2', 'main 第二个层 id');
+});
+
 test('解析 Transformer 模板', function() {
   const transformerYaml = `name: Transformer Encoder
 layout: horizontal
