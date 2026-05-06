@@ -148,7 +148,7 @@ layers_after_blocks:
   googlenet: {
     name: 'GoogLeNet (Inception v1)',
     template: `name: GoogLeNet
-layout: horizontal
+layout: vertical
 
 layers:
   - {id: input, name: Input, type: input, size: "224x224x3"}
@@ -206,7 +206,7 @@ layers_after_blocks:
   inception_module: {
     name: 'Inception Module',
     template: `name: Inception Module
-layout: horizontal
+layout: vertical
 
 layers:
   - {id: input, name: Input, type: input, size: "28x28x256"}
