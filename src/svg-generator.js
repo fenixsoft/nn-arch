@@ -178,16 +178,24 @@ ${content}`;
 
 /**
  * 生成层内容文本（包含 pool、dropout 等）
- * note 类型只显示文本内容
+ * note 类型显示 name 和 label（如有）
  */
 function generateLayerContent(layer) {
   const centerX = layer.x + layer.width / 2;
   const data = layer.data;
 
-  // note 类型：只显示文本内容，居中显示
+  // note 类型：显示 name，label 作为额外提示（如有）
   if (layer.type === 'note') {
-    const nameY = layer.y + layer.height / 2 + SVG_CONFIG.fontSizeName / 3;
-    return `<text x="${centerX}" y="${nameY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeName}" font-style="italic" font-family="Arial, sans-serif" fill="#666">${layer.name}</text>`;
+    const nameY = layer.y + layer.height / 2 - SVG_CONFIG.fontSizeDetail / 2;
+    let content = `<text x="${centerX}" y="${nameY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeName}" font-style="italic" font-family="Arial, sans-serif" fill="#666">${layer.name}</text>`;
+
+    // 如果有 label，在 name 下方显示
+    if (data.label) {
+      const labelY = nameY + SVG_CONFIG.fontSizeName + 6;
+      content += `<text x="${centerX}" y="${labelY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#999">${data.label}</text>`;
+    }
+
+    return content;
   }
 
   // 层名称（上方增加空隙）
