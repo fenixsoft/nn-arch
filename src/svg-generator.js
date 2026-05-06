@@ -16,6 +16,7 @@ const COLORS = {
   activation: { fill: '#f8f0e8', stroke: '#d9b559' },
   merge: { fill: '#f0f8e8', stroke: '#59d9b5' },
   identity: { fill: '#f8f8f8', stroke: '#999999' },
+  note: { fill: '#f8f8f8', stroke: '#cccccc' },  // 注释/说明方块
   // Block colors
   block_residual: { fill: '#e8f0f8', stroke: '#5990d9' },
   block_parallel: { fill: '#e8f8f0', stroke: '#59d9b5' },
@@ -157,10 +158,18 @@ function generateSection(section) {
 
 /**
  * 生成层矩形框（显示 pool 和 dropout）
+ * note 类型使用虚线边框，只显示文本
  */
 function generateLayer(layer) {
   const colors = COLORS[layer.type] || COLORS.input;
   const content = generateLayerContent(layer);
+
+  // note 类型使用虚线边框
+  if (layer.type === 'note') {
+    return `
+<rect x="${layer.x}" y="${layer.y}" width="${layer.width}" height="${layer.height}" fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="${SVG_CONFIG.strokeWidth}" stroke-dasharray="${6},${4}" rx="${SVG_CONFIG.cornerRadius}"/>
+${content}`;
+  }
 
   return `
 <rect x="${layer.x}" y="${layer.y}" width="${layer.width}" height="${layer.height}" fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="${SVG_CONFIG.strokeWidth}" rx="${SVG_CONFIG.cornerRadius}"/>
@@ -169,10 +178,17 @@ ${content}`;
 
 /**
  * 生成层内容文本（包含 pool、dropout 等）
+ * note 类型只显示文本内容
  */
 function generateLayerContent(layer) {
   const centerX = layer.x + layer.width / 2;
   const data = layer.data;
+
+  // note 类型：只显示文本内容，居中显示
+  if (layer.type === 'note') {
+    const nameY = layer.y + layer.height / 2 + SVG_CONFIG.fontSizeName / 3;
+    return `<text x="${centerX}" y="${nameY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeName}" font-style="italic" font-family="Arial, sans-serif" fill="#666">${layer.name}</text>`;
+  }
 
   // 层名称（上方增加空隙）
   const nameY = layer.y + SVG_CONFIG.nameGap + SVG_CONFIG.fontSizeName;

@@ -151,6 +151,21 @@ layers:                          # 所有层定义
 | `output` | `size` | `act` |
 | `embedding` | `size` | - |
 | `attention` | `heads` | `type` |
+| `note` | - | `name`（显示的文本内容） |
+
+#### note 类型说明
+
+`note` 类型用于在架构图中添加注释说明：
+- 使用虚线边框，灰色填充
+- 只显示 `name` 属性的文本内容（斜体样式）
+- **不参与数据流连接**，无箭头连接到其他层
+
+```yaml
+# 在 output 后添加注释说明
+layers_after_blocks:
+  - {id: output, name: Output, type: output, size: "28x28x256"}
+  - {id: note, name: "用于下一阶段输入", type: note}
+```
 
 ### 支持的块类型
 

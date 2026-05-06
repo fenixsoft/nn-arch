@@ -471,13 +471,17 @@ function calculateVerticalLayout(network, layout) {
 
 /**
  * 计算连接箭头位置
+ * note 类型不参与连接（跳过）
  */
 function calculateConnections(layers, direction = 'horizontal') {
   const connections = [];
 
-  for (let i = 0; i < layers.length - 1; i++) {
-    const from = layers[i];
-    const to = layers[i + 1];
+  // 过滤掉 note 类型的层
+  const connectableLayers = layers.filter(l => l.type !== 'note');
+
+  for (let i = 0; i < connectableLayers.length - 1; i++) {
+    const from = connectableLayers[i];
+    const to = connectableLayers[i + 1];
 
     // 只连接同一 section 内的层（sectionIndex 相同或都无 sectionIndex）
     if (from.sectionIndex !== undefined && to.sectionIndex !== undefined && from.sectionIndex !== to.sectionIndex) {
@@ -517,6 +521,7 @@ function calculateConnections(layers, direction = 'horizontal') {
 
 /**
  * 计算 block 连接（层到 block、block 到 block、block 到层）
+ * note 类型不参与连接
  * @param {object} layerGroups - 层分组对象 { initialLayers, blocks, afterBlocks }
  * @returns {array} block 连接列表
  */
@@ -525,9 +530,13 @@ function calculateBlockConnections(layerGroups) {
   const layerWidth = LAYOUT_CONFIG.layerWidth;
   const layerHeight = LAYOUT_CONFIG.layerHeight;
 
+  // 过滤掉 note 类型
+  const initialLayersFiltered = layerGroups.initialLayers.filter(l => l.type !== 'note');
+  const afterBlocksFiltered = layerGroups.afterBlocks.filter(l => l.type !== 'note');
+
   // 1. initialLayers 到第一个 block 的连接
-  if (layerGroups.initialLayers.length > 0 && layerGroups.blocks.length > 0) {
-    const lastInitialLayer = layerGroups.initialLayers[layerGroups.initialLayers.length - 1];
+  if (initialLayersFiltered.length > 0 && layerGroups.blocks.length > 0) {
+    const lastInitialLayer = initialLayersFiltered[initialLayersFiltered.length - 1];
     const firstBlock = layerGroups.blocks[0];
 
     connections.push({
@@ -557,10 +566,10 @@ function calculateBlockConnections(layerGroups) {
     });
   }
 
-  // 3. 最后一个 block 到 afterBlocks 的连接
-  if (layerGroups.blocks.length > 0 && layerGroups.afterBlocks.length > 0) {
+  // 3. 最后一个 block 到 afterBlocks 的连接（跳过 note）
+  if (layerGroups.blocks.length > 0 && afterBlocksFiltered.length > 0) {
     const lastBlock = layerGroups.blocks[layerGroups.blocks.length - 1];
-    const firstAfterLayer = layerGroups.afterBlocks[0];
+    const firstAfterLayer = afterBlocksFiltered[0];
 
     connections.push({
       from: lastBlock.name,
@@ -573,12 +582,12 @@ function calculateBlockConnections(layerGroups) {
     });
   }
 
-  // 4. 如果没有 blocks，但 initialLayers 和 afterBlocks 都有，连接它们
+  // 4. 如果没有 blocks，但 initialLayers 和 afterBlocks 都有，连接它们（跳过 note）
   if (layerGroups.blocks.length === 0 &&
-      layerGroups.initialLayers.length > 0 &&
-      layerGroups.afterBlocks.length > 0) {
-    const lastInitialLayer = layerGroups.initialLayers[layerGroups.initialLayers.length - 1];
-    const firstAfterLayer = layerGroups.afterBlocks[0];
+      initialLayersFiltered.length > 0 &&
+      afterBlocksFiltered.length > 0) {
+    const lastInitialLayer = initialLayersFiltered[initialLayersFiltered.length - 1];
+    const firstAfterLayer = afterBlocksFiltered[0];
 
     connections.push({
       from: lastInitialLayer.name,
@@ -597,15 +606,20 @@ function calculateBlockConnections(layerGroups) {
 /**
  * 计算 block 连接（垂直布局版本）
  * 连接方向从下到上
+ * note 类型不参与连接
  */
 function calculateBlockConnectionsVertical(layerGroups) {
   const connections = [];
   const layerWidth = LAYOUT_CONFIG.layerWidth;
   const layerHeight = LAYOUT_CONFIG.layerHeight;
 
+  // 过滤掉 note 类型
+  const initialLayersFiltered = layerGroups.initialLayers.filter(l => l.type !== 'note');
+  const afterBlocksFiltered = layerGroups.afterBlocks.filter(l => l.type !== 'note');
+
   // 1. initialLayers 到第一个 block 的连接（从底部到顶部）
-  if (layerGroups.initialLayers.length > 0 && layerGroups.blocks.length > 0) {
-    const lastInitialLayer = layerGroups.initialLayers[layerGroups.initialLayers.length - 1];
+  if (initialLayersFiltered.length > 0 && layerGroups.blocks.length > 0) {
+    const lastInitialLayer = initialLayersFiltered[initialLayersFiltered.length - 1];
     const firstBlock = layerGroups.blocks[0];
 
     connections.push({
@@ -635,10 +649,10 @@ function calculateBlockConnectionsVertical(layerGroups) {
     });
   }
 
-  // 3. 最后一个 block 到 afterBlocks 的连接
-  if (layerGroups.blocks.length > 0 && layerGroups.afterBlocks.length > 0) {
+  // 3. 最后一个 block 到 afterBlocks 的连接（跳过 note）
+  if (layerGroups.blocks.length > 0 && afterBlocksFiltered.length > 0) {
     const lastBlock = layerGroups.blocks[layerGroups.blocks.length - 1];
-    const firstAfterLayer = layerGroups.afterBlocks[0];
+    const firstAfterLayer = afterBlocksFiltered[0];
 
     connections.push({
       from: lastBlock.name,
@@ -651,12 +665,12 @@ function calculateBlockConnectionsVertical(layerGroups) {
     });
   }
 
-  // 4. 如果没有 blocks，连接 initialLayers 和 afterBlocks
+  // 4. 如果没有 blocks，连接 initialLayers 和 afterBlocks（跳过 note）
   if (layerGroups.blocks.length === 0 &&
-      layerGroups.initialLayers.length > 0 &&
-      layerGroups.afterBlocks.length > 0) {
-    const lastInitialLayer = layerGroups.initialLayers[layerGroups.initialLayers.length - 1];
-    const firstAfterLayer = layerGroups.afterBlocks[0];
+      initialLayersFiltered.length > 0 &&
+      afterBlocksFiltered.length > 0) {
+    const lastInitialLayer = initialLayersFiltered[initialLayersFiltered.length - 1];
+    const firstAfterLayer = afterBlocksFiltered[0];
 
     connections.push({
       from: lastInitialLayer.name,
