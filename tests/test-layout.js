@@ -374,3 +374,108 @@ layers_after_blocks:
   assertEqual(embeddingLayer !== undefined, true, 'Transformer Embedding 层存在');
   assertEqual(embeddingLayer.type, 'embedding', 'Transformer Embedding 层类型');
 });
+
+// === Block Layout 测试 ===
+
+test('计算 parallel block 布局', function() {
+  const block = {
+    name: 'MultiHead',
+    type: 'parallel',
+    branches: [
+      {id: 'q', name: 'Q', type: 'fc', size: 64},
+      {id: 'k', name: 'K', type: 'fc', size: 64},
+      {id: 'v', name: 'V', type: 'fc', size: 64}
+    ],
+    merge: 'concat'
+  };
+
+  const blockLayout = calculateBlockLayout(block, 100, 50);
+  assertEqual(blockLayout.name, 'MultiHead', 'block name');
+  assertEqual(blockLayout.type, 'parallel', 'block type');
+  assertEqual(blockLayout.layers.length, 3, '分支层数量');
+  assertEqual(blockLayout.layers[0].name, 'Q', '第一个分支名称');
+  assertEqual(blockLayout.width > 0, true, '容器宽度');
+  assertEqual(blockLayout.height > 0, true, '容器高度');
+});
+
+test('计算 residual block arc 样式布局', function() {
+  const block = {
+    name: 'ResBlock',
+    type: 'residual',
+    style: 'arc',
+    main: [
+      {name: 'conv1', type: 'conv', kernel: 3, channels: 64},
+      {name: 'conv2', type: 'conv', kernel: 3, channels: 64}
+    ],
+    skip: 'identity',
+    merge: 'add'
+  };
+
+  const blockLayout = calculateBlockLayout(block, 100, 50);
+  assertEqual(blockLayout.name, 'ResBlock', 'block name');
+  assertEqual(blockLayout.type, 'residual', 'block type');
+  assertEqual(blockLayout.layers.length, 2, '主路径层数量');
+  assertEqual(blockLayout.skipConnection.type, 'arc', 'skip connection type');
+  assertEqual(blockLayout.skipConnection !== undefined, true, '存在 skip connection');
+});
+
+test('计算 residual block parallel 样式布局', function() {
+  const block = {
+    name: 'ResBlock',
+    type: 'residual',
+    style: 'parallel',
+    main: [
+      {name: 'conv1', type: 'conv', kernel: 3, channels: 64},
+      {name: 'conv2', type: 'conv', kernel: 3, channels: 64}
+    ],
+    skip: [
+      {name: 'skip_conv', type: 'conv', kernel: 1, channels: 64}
+    ],
+    merge: 'add'
+  };
+
+  const blockLayout = calculateBlockLayout(block, 100, 50);
+  assertEqual(blockLayout.name, 'ResBlock', 'block name');
+  assertEqual(blockLayout.type, 'residual', 'block type');
+  assertEqual(blockLayout.layers.length >= 2, true, '主路径层数量');
+  assertEqual(blockLayout.skipConnection.type, 'parallel', 'skip connection type');
+});
+
+test('计算 stack block expand=false 布局', function() {
+  const block = {
+    name: 'EncoderStack',
+    type: 'stack',
+    repeat: 6,
+    expand: false,
+    layers: [
+      {name: 'attn', type: 'attention', heads: 8},
+      {name: 'ff', type: 'fc', size: 2048}
+    ]
+  };
+
+  const blockLayout = calculateBlockLayout(block, 100, 50);
+  assertEqual(blockLayout.name, 'EncoderStack', 'block name');
+  assertEqual(blockLayout.type, 'stack', 'block type');
+  assertEqual(blockLayout.layers.length, 2, '未展开时只显示一层');
+  assertEqual(blockLayout.repeatMarker !== undefined, true, '存在重复标记');
+  assertEqual(blockLayout.repeatMarker.count, 6, '重复次数');
+});
+
+test('计算 stack block expand=true 布局', function() {
+  const block = {
+    name: 'EncoderStack',
+    type: 'stack',
+    repeat: 3,
+    expand: true,
+    layers: [
+      {name: 'attn', type: 'attention', heads: 8},
+      {name: 'ff', type: 'fc', size: 2048}
+    ]
+  };
+
+  const blockLayout = calculateBlockLayout(block, 100, 50);
+  assertEqual(blockLayout.name, 'EncoderStack', 'block name');
+  assertEqual(blockLayout.type, 'stack', 'block type');
+  assertEqual(blockLayout.layers.length, 6, '展开时显示所有重复层（3次 × 2层）');
+  assertEqual(blockLayout.repeatMarker, undefined, '展开时无重复标记');
+});
