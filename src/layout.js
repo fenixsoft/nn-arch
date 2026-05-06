@@ -332,8 +332,16 @@ function calculateVerticalLayout(network, layout) {
   const layerWidth = LAYOUT_CONFIG.layerWidth;
   const layerHeight = LAYOUT_CONFIG.layerHeight;
 
+  // 记录层分组边界（用于 block 连接）
+  const layerGroups = {
+    initialLayers: [],
+    blocks: [],
+    afterBlocks: []
+  };
+
+  // 1. 处理初始层
   network.layers.forEach((layer, index) => {
-    layout.layers.push({
+    const layerLayout = {
       name: layer.name,
       type: layer.type,
       x: currentX,
@@ -341,17 +349,73 @@ function calculateVerticalLayout(network, layout) {
       width: layerWidth,
       height: layerHeight,
       data: layer
-    });
-
+    };
+    layout.layers.push(layerLayout);
+    layerGroups.initialLayers.push(layerLayout);
     currentY += layerHeight + LAYOUT_CONFIG.layerGap;
   });
 
-  layout.width = currentX + layerWidth + LAYOUT_CONFIG.startX;
-  layout.height = currentY + LAYOUT_CONFIG.bottomPadding;
+  // 2. 处理 blocks
+  if (network.blocks && network.blocks.length > 0) {
+    network.blocks.forEach((block, blockIndex) => {
+      const blockLayout = calculateBlockLayout(block, currentX, currentY, 'vertical');
+      layout.blocks.push(blockLayout);
+      layerGroups.blocks.push(blockLayout);
+
+      // 将 block 内部层添加到全局 layers 数组
+      blockLayout.layers.forEach(layer => {
+        layout.layers.push(layer);
+      });
+
+      // 更新 currentY 到 block 底部边缘
+      currentY = blockLayout.y + blockLayout.height + LAYOUT_CONFIG.layerGap;
+    });
+  }
+
+  // 3. 处理 layers_after_blocks
+  if (network.layersAfterBlocks && network.layersAfterBlocks.length > 0) {
+    network.layersAfterBlocks.forEach((layer, index) => {
+      const layerLayout = {
+        name: layer.name,
+        type: layer.type,
+        x: currentX,
+        y: currentY,
+        width: layerWidth,
+        height: layerHeight,
+        data: layer
+      };
+      layout.layers.push(layerLayout);
+      layerGroups.afterBlocks.push(layerLayout);
+      currentY += layerHeight + LAYOUT_CONFIG.layerGap;
+    });
+  }
+
+  // 计算总尺寸 - 需要考虑 blocks 可能向右延伸
+  const lastLayer = layout.layers[layout.layers.length - 1];
+  let maxY = currentY;
+  let maxX = currentX + layerWidth;
+  layout.blocks.forEach(block => {
+    if (block.x + block.width > maxX) {
+      maxX = block.x + block.width;
+    }
+    if (block.y + block.height > maxY) {
+      maxY = block.y + block.height;
+    }
+  });
+
+  layout.width = maxX + LAYOUT_CONFIG.startX;
+  layout.height = maxY + LAYOUT_CONFIG.bottomPadding;
   layout.title.x = layout.width / 2;
   layout.title.y = LAYOUT_CONFIG.fontSizeTitle + LAYOUT_CONFIG.titleGap;
 
-  layout.connections = calculateConnections(layout.layers, 'vertical');
+  // 计算连接箭头（垂直方向）
+  layout.connections = calculateConnections(
+    layerGroups.initialLayers,
+    'vertical'
+  );
+
+  // 计算 block 连接
+  layout.blockConnections = calculateBlockConnectionsVertical(layerGroups);
 }
 
 /**
@@ -480,13 +544,92 @@ function calculateBlockConnections(layerGroups) {
 }
 
 /**
+ * 计算 block 连接（垂直布局版本）
+ * 连接方向从下到上
+ */
+function calculateBlockConnectionsVertical(layerGroups) {
+  const connections = [];
+  const layerWidth = LAYOUT_CONFIG.layerWidth;
+  const layerHeight = LAYOUT_CONFIG.layerHeight;
+
+  // 1. initialLayers 到第一个 block 的连接（从底部到顶部）
+  if (layerGroups.initialLayers.length > 0 && layerGroups.blocks.length > 0) {
+    const lastInitialLayer = layerGroups.initialLayers[layerGroups.initialLayers.length - 1];
+    const firstBlock = layerGroups.blocks[0];
+
+    connections.push({
+      from: lastInitialLayer.name,
+      to: firstBlock.name,
+      x1: lastInitialLayer.x + lastInitialLayer.width / 2,
+      y1: lastInitialLayer.y + lastInitialLayer.height,
+      x2: firstBlock.x + firstBlock.width / 2,
+      y2: firstBlock.y,
+      type: 'block-entry'
+    });
+  }
+
+  // 2. block 到 block 的连接
+  for (let i = 0; i < layerGroups.blocks.length - 1; i++) {
+    const fromBlock = layerGroups.blocks[i];
+    const toBlock = layerGroups.blocks[i + 1];
+
+    connections.push({
+      from: fromBlock.name,
+      to: toBlock.name,
+      x1: fromBlock.x + fromBlock.width / 2,
+      y1: fromBlock.y + fromBlock.height,
+      x2: toBlock.x + toBlock.width / 2,
+      y2: toBlock.y,
+      type: 'block-to-block'
+    });
+  }
+
+  // 3. 最后一个 block 到 afterBlocks 的连接
+  if (layerGroups.blocks.length > 0 && layerGroups.afterBlocks.length > 0) {
+    const lastBlock = layerGroups.blocks[layerGroups.blocks.length - 1];
+    const firstAfterLayer = layerGroups.afterBlocks[0];
+
+    connections.push({
+      from: lastBlock.name,
+      to: firstAfterLayer.name,
+      x1: lastBlock.x + lastBlock.width / 2,
+      y1: lastBlock.y + lastBlock.height,
+      x2: firstAfterLayer.x + firstAfterLayer.width / 2,
+      y2: firstAfterLayer.y,
+      type: 'block-exit'
+    });
+  }
+
+  // 4. 如果没有 blocks，连接 initialLayers 和 afterBlocks
+  if (layerGroups.blocks.length === 0 &&
+      layerGroups.initialLayers.length > 0 &&
+      layerGroups.afterBlocks.length > 0) {
+    const lastInitialLayer = layerGroups.initialLayers[layerGroups.initialLayers.length - 1];
+    const firstAfterLayer = layerGroups.afterBlocks[0];
+
+    connections.push({
+      from: lastInitialLayer.name,
+      to: firstAfterLayer.name,
+      x1: lastInitialLayer.x + lastInitialLayer.width / 2,
+      y1: lastInitialLayer.y + lastInitialLayer.height,
+      x2: firstAfterLayer.x + firstAfterLayer.width / 2,
+      y2: firstAfterLayer.y,
+      type: 'sequential'
+    });
+  }
+
+  return connections;
+}
+
+/**
  * 计算 block 布局
  * @param {object} block - block 定义
  * @param {number} startX - 起始 X 坐标
  * @param {number} startY - 起始 Y 坐标
+ * @param {string} direction - 布局方向 ('horizontal' 或 'vertical')
  * @returns {object} block 布局结果
  */
-function calculateBlockLayout(block, startX, startY) {
+function calculateBlockLayout(block, startX, startY, direction = 'horizontal') {
   const layout = {
     name: block.name,
     type: block.type,
@@ -496,6 +639,7 @@ function calculateBlockLayout(block, startX, startY) {
     merge: block.merge,
     act: block.act,
     norm: block.norm,
+    direction: direction,
     x: startX,
     y: startY,
     width: 0,
@@ -511,13 +655,13 @@ function calculateBlockLayout(block, startX, startY) {
   // 根据类型调用不同的布局计算
   switch (block.type) {
     case 'parallel':
-      calculateParallelBlockLayout(block, layout, startX, startY);
+      calculateParallelBlockLayout(block, layout, startX, startY, direction);
       break;
     case 'residual':
-      calculateResidualBlockLayout(block, layout, startX, startY);
+      calculateResidualBlockLayout(block, layout, startX, startY, direction);
       break;
     case 'stack':
-      calculateStackBlockLayout(block, layout, startX, startY);
+      calculateStackBlockLayout(block, layout, startX, startY, direction);
       break;
     default:
       // 未知类型，返回空布局
@@ -529,9 +673,10 @@ function calculateBlockLayout(block, startX, startY) {
 
 /**
  * 计算 parallel block 布局
- * 分支垂直堆叠，每个分支内部水平排列多层
+ * horizontal: 分支垂直堆叠，每个分支内部水平排列多层
+ * vertical: 分支水平排列，每个分支内部垂直排列多层
  */
-function calculateParallelBlockLayout(block, layout, startX, startY) {
+function calculateParallelBlockLayout(block, layout, startX, startY, direction = 'horizontal') {
   const layerWidth = LAYOUT_CONFIG.layerWidth;
   const layerHeight = LAYOUT_CONFIG.layerHeight;
   const layerGap = LAYOUT_CONFIG.layerGap;
@@ -541,86 +686,163 @@ function calculateParallelBlockLayout(block, layout, startX, startY) {
   const branches = block.branches || [];
   if (branches.length === 0) return;
 
-  // 标题区域高度
+  // 标题区域高度/宽度
   const titleHeight = LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.blockTitleGap;
-
-  // 计算每个分支的位置（垂直堆叠）
-  let currentY = startY + titleHeight;
-  const contentStartX = startX + padding;
+  const titleWidth = LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.blockTitleGap;
 
   // 记录每个分支的层，用于计算 fork/merge
   const branchLayerGroups = [];
-  let maxBranchWidth = layerWidth; // 最长的分支宽度
 
-  branches.forEach((branch, branchIndex) => {
-    const branchLayers = [];
+  if (direction === 'vertical') {
+    // 垂直布局：分支水平排列（左右并行）
+    let currentX = startX + titleWidth;
+    let maxBranchHeight = layerHeight;
 
-    // 判断是单层还是多层分支
-    if (Array.isArray(branch)) {
-      // 多层分支：水平排列
-      let currentX = contentStartX;
-      branch.forEach((layer, layerIndex) => {
+    branches.forEach((branch, branchIndex) => {
+      const branchLayers = [];
+      const contentStartY = startY + padding;
+
+      if (Array.isArray(branch)) {
+        // 多层分支：垂直排列（上下排列）
+        let currentY = contentStartY;
+        branch.forEach((layer, layerIndex) => {
+          const layerData = {
+            id: layer.id || `${block.name}_${branchIndex}_${layerIndex}`,
+            name: layer.name,
+            type: layer.type,
+            x: currentX,
+            y: currentY,
+            width: layerWidth,
+            height: layerHeight,
+            data: layer,
+            branchIndex: branchIndex
+          };
+          layout.layers.push(layerData);
+          branchLayers.push(layerData);
+          currentY += layerHeight + layerGap;
+        });
+
+        // 计算该分支的总高度
+        const branchHeight = (branch.length - 1) * (layerHeight + layerGap) + layerHeight;
+        if (branchHeight > maxBranchHeight) {
+          maxBranchHeight = branchHeight;
+        }
+
+        currentX += layerWidth + (branchIndex < branches.length - 1 ? branchGap : 0);
+      } else {
+        // 单层分支
         const layerData = {
-          id: layer.id || `${block.name}_${branchIndex}_${layerIndex}`,
-          name: layer.name,
-          type: layer.type,
+          id: branch.id || `${block.name}_${branchIndex}`,
+          name: branch.name,
+          type: branch.type,
           x: currentX,
-          y: currentY,
+          y: contentStartY,
           width: layerWidth,
           height: layerHeight,
-          data: layer,
+          data: branch,
           branchIndex: branchIndex
         };
         layout.layers.push(layerData);
         branchLayers.push(layerData);
-        currentX += layerWidth + layerGap;
-      });
 
-      // 计算该分支的总宽度
-      const branchWidth = (branch.length - 1) * (layerWidth + layerGap) + layerWidth;
-      if (branchWidth > maxBranchWidth) {
-        maxBranchWidth = branchWidth;
+        currentX += layerWidth + (branchIndex < branches.length - 1 ? branchGap : 0);
       }
 
-      currentY += layerHeight + (branchIndex < branches.length - 1 ? branchGap : 0);
-    } else {
-      // 单层分支
-      const layerData = {
-        id: branch.id || `${block.name}_${branchIndex}`,
-        name: branch.name,
-        type: branch.type,
-        x: contentStartX,
-        y: currentY,
-        width: layerWidth,
-        height: layerHeight,
-        data: branch,
-        branchIndex: branchIndex
-      };
-      layout.layers.push(layerData);
-      branchLayers.push(layerData);
+      branchLayerGroups.push(branchLayers);
+    });
 
-      currentY += layerHeight + (branchIndex < branches.length - 1 ? branchGap : 0);
-    }
+    // 计算容器尺寸
+    layout.width = currentX - startX + padding;
+    layout.height = maxBranchHeight + padding * 2;
 
-    branchLayerGroups.push(branchLayers);
-  });
+    // 计算 fork 点：block 上方中心
+    const contentWidth = currentX - startX - titleWidth - padding;
+    layout.forkPoint = {
+      x: startX + titleWidth + contentWidth / 2,
+      y: startY + padding / 2
+    };
 
-  // 计算容器尺寸
-  layout.width = maxBranchWidth + padding * 2;
-  layout.height = currentY - startY + padding;
+    // 计算 merge 点：block 下方中心
+    layout.mergePoint = {
+      x: layout.forkPoint.x,
+      y: startY + layout.height - padding / 2
+    };
 
-  // 计算 fork 点：block 左侧中心
-  const contentHeight = currentY - startY - titleHeight - padding;
-  layout.forkPoint = {
-    x: startX + padding / 2,
-    y: startY + titleHeight + contentHeight / 2
-  };
+  } else {
+    // 水平布局（默认）：分支垂直堆叠（上下并行）
+    let currentY = startY + titleHeight;
+    const contentStartX = startX + padding;
+    let maxBranchWidth = layerWidth;
 
-  // 计算 merge 点：block 右侧中心（最长分支的末端）
-  layout.mergePoint = {
-    x: startX + layout.width - padding / 2,
-    y: layout.forkPoint.y
-  };
+    branches.forEach((branch, branchIndex) => {
+      const branchLayers = [];
+
+      if (Array.isArray(branch)) {
+        // 多层分支：水平排列（左右排列）
+        let currentX = contentStartX;
+        branch.forEach((layer, layerIndex) => {
+          const layerData = {
+            id: layer.id || `${block.name}_${branchIndex}_${layerIndex}`,
+            name: layer.name,
+            type: layer.type,
+            x: currentX,
+            y: currentY,
+            width: layerWidth,
+            height: layerHeight,
+            data: layer,
+            branchIndex: branchIndex
+          };
+          layout.layers.push(layerData);
+          branchLayers.push(layerData);
+          currentX += layerWidth + layerGap;
+        });
+
+        // 计算该分支的总宽度
+        const branchWidth = (branch.length - 1) * (layerWidth + layerGap) + layerWidth;
+        if (branchWidth > maxBranchWidth) {
+          maxBranchWidth = branchWidth;
+        }
+
+        currentY += layerHeight + (branchIndex < branches.length - 1 ? branchGap : 0);
+      } else {
+        // 单层分支
+        const layerData = {
+          id: branch.id || `${block.name}_${branchIndex}`,
+          name: branch.name,
+          type: branch.type,
+          x: contentStartX,
+          y: currentY,
+          width: layerWidth,
+          height: layerHeight,
+          data: branch,
+          branchIndex: branchIndex
+        };
+        layout.layers.push(layerData);
+        branchLayers.push(layerData);
+
+        currentY += layerHeight + (branchIndex < branches.length - 1 ? branchGap : 0);
+      }
+
+      branchLayerGroups.push(branchLayers);
+    });
+
+    // 计算容器尺寸
+    layout.width = maxBranchWidth + padding * 2;
+    layout.height = currentY - startY + padding;
+
+    // 计算 fork 点：block 左侧中心
+    const contentHeight = currentY - startY - titleHeight - padding;
+    layout.forkPoint = {
+      x: startX + padding / 2,
+      y: startY + titleHeight + contentHeight / 2
+    };
+
+    // 计算 merge 点：block 右侧中心
+    layout.mergePoint = {
+      x: startX + layout.width - padding / 2,
+      y: layout.forkPoint.y
+    };
+  }
 
   // 记录分支层组，用于 SVG 渲染时计算分叉/汇聚连线
   layout.branchLayerGroups = branchLayerGroups;
@@ -630,8 +852,9 @@ function calculateParallelBlockLayout(block, layout, startX, startY) {
  * 计算 residual block 布局
  * arc 样式：主路径水平，skip 弧线在上
  * parallel 样式：主路径和 skip 并行
+ * vertical 方向：主路径垂直排列
  */
-function calculateResidualBlockLayout(block, layout, startX, startY) {
+function calculateResidualBlockLayout(block, layout, startX, startY, direction = 'horizontal') {
   const layerWidth = LAYOUT_CONFIG.layerWidth;
   const layerHeight = LAYOUT_CONFIG.layerHeight;
   const layerGap = LAYOUT_CONFIG.layerGap;
@@ -641,115 +864,229 @@ function calculateResidualBlockLayout(block, layout, startX, startY) {
   const mainLayers = block.main || [];
   if (mainLayers.length === 0) return;
 
-  // 标题区域高度
+  // 标题区域高度/宽度
   const titleHeight = LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.blockTitleGap;
+  const titleWidth = LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.blockTitleGap;
 
-  if (block.style === 'parallel') {
-    // parallel 样式：主路径和 skip 并行排列
-    const skipLayers = block.skip || [];
+  if (direction === 'vertical') {
+    // 垂直布局：主路径垂直排列
+    if (block.style === 'parallel') {
+      // parallel 样式：主路径和 skip 并行（左右）
+      const skipLayers = block.skip || [];
+      const hasSkipLayers = Array.isArray(skipLayers) && skipLayers.length > 0;
 
-    // 主路径起始位置
-    const mainStartX = startX + padding;
-    const mainStartY = startY + titleHeight;
+      // 主路径起始位置
+      const mainStartX = startX + titleWidth;
+      const mainStartY = startY + padding;
 
-    // 计算 skip 路径是否需要额外空间
-    const hasSkipLayers = Array.isArray(skipLayers) && skipLayers.length > 0;
-
-    // 主路径层
-    let currentX = mainStartX;
-    mainLayers.forEach((layer, index) => {
-      layout.layers.push({
-        name: layer.name,
-        type: layer.type,
-        x: currentX,
-        y: mainStartY,
-        width: layerWidth,
-        height: layerHeight,
-        data: layer,
-        path: 'main'
-      });
-      currentX += layerWidth + layerGap;
-    });
-
-    // skip 路径（如果有的话）
-    let skipX = mainStartX;
-    if (hasSkipLayers) {
-      const skipStartY = mainStartY + layerHeight + LAYOUT_CONFIG.branchGap;
-
-      skipLayers.forEach((layer, index) => {
+      // 主路径层（垂直排列）
+      let currentY = mainStartY;
+      mainLayers.forEach((layer, index) => {
         layout.layers.push({
           name: layer.name,
           type: layer.type,
-          x: skipX,
-          y: skipStartY,
+          x: mainStartX,
+          y: currentY,
           width: layerWidth,
           height: layerHeight,
           data: layer,
-          path: 'skip'
+          path: 'main'
         });
-        skipX += layerWidth + layerGap;
+        currentY += layerHeight + layerGap;
       });
+
+      // skip 路径（右侧）
+      let skipY = mainStartY;
+      if (hasSkipLayers) {
+        const skipStartX = mainStartX + layerWidth + LAYOUT_CONFIG.branchGap;
+
+        skipLayers.forEach((layer, index) => {
+          layout.layers.push({
+            name: layer.name,
+            type: layer.type,
+            x: skipStartX,
+            y: skipY,
+            width: layerWidth,
+            height: layerHeight,
+            data: layer,
+            path: 'skip'
+          });
+          skipY += layerHeight + layerGap;
+        });
+      }
+
+      // 计算尺寸
+      const mainEndY = currentY - layerGap;
+      const skipEndY = skipY - layerGap;
+      const maxEndY = Math.max(mainEndY, skipEndY);
+      layout.height = maxEndY + padding - startY;
+      layout.width = hasSkipLayers
+        ? titleWidth + layerWidth * 2 + LAYOUT_CONFIG.branchGap + padding
+        : titleWidth + layerWidth + padding;
+
+      // 主路径连接（垂直）
+      layout.connections = calculateConnections(
+        layout.layers.filter(l => l.path === 'main'),
+        'vertical'
+      );
+
+      // skip connection
+      layout.skipConnection = {
+        type: 'parallel-vertical',
+        startY: mainStartY,
+        endY: maxEndY
+      };
+
+    } else {
+      // arc 样式：主路径垂直，skip 弧线在左
+      const mainStartX = startX + titleWidth + arcRadius;
+      const mainStartY = startY + padding;
+
+      // 主路径层（垂直排列）
+      let currentY = mainStartY;
+      mainLayers.forEach((layer, index) => {
+        layout.layers.push({
+          name: layer.name,
+          type: layer.type,
+          x: mainStartX,
+          y: currentY,
+          width: layerWidth,
+          height: layerHeight,
+          data: layer
+        });
+        currentY += layerHeight + layerGap;
+      });
+
+      // 计算尺寸
+      layout.width = titleWidth + arcRadius + layerWidth + padding;
+      layout.height = currentY - layerGap + padding - startY;
+
+      // 主路径连接（垂直）
+      layout.connections = calculateConnections(layout.layers, 'vertical');
+
+      // skip connection（arc 样式，垂直）
+      const firstLayer = layout.layers[0];
+      const lastLayer = layout.layers[layout.layers.length - 1];
+
+      layout.skipConnection = {
+        type: 'arc-vertical',
+        startX: firstLayer.x + layerWidth / 2,
+        startY: firstLayer.y,
+        endX: lastLayer.x + layerWidth / 2,
+        endY: lastLayer.y,
+        radius: arcRadius
+      };
     }
 
-    // 计算尺寸 - 需要考虑主路径和 skip 路径的最大宽度
-    const mainEndX = currentX - layerGap;
-    const skipEndX = skipX - layerGap;
-    const maxEndX = Math.max(mainEndX, skipEndX);
-    layout.width = maxEndX + padding - startX;
-    layout.height = hasSkipLayers
-      ? titleHeight + layerHeight * 2 + LAYOUT_CONFIG.branchGap + padding
-      : titleHeight + layerHeight + padding;
-
-    // 主路径连接
-    layout.connections = calculateConnections(
-      layout.layers.filter(l => l.path === 'main')
-    );
-
-    // skip connection（parallel 样式）
-    layout.skipConnection = {
-      type: 'parallel',
-      startX: mainStartX,
-      endX: maxEndX
-    };
-
   } else {
-    // arc 样式（默认）：主路径水平，skip 弧线在上
-    const mainStartY = startY + titleHeight + arcRadius;
+    // 水平布局（原有逻辑）
+    if (block.style === 'parallel') {
+      // parallel 样式：主路径和 skip 并行排列
+      const skipLayers = block.skip || [];
 
-    // 主路径层
-    let currentX = startX + padding;
-    mainLayers.forEach((layer, index) => {
-      layout.layers.push({
-        name: layer.name,
-        type: layer.type,
-        x: currentX,
-        y: mainStartY,
-        width: layerWidth,
-        height: layerHeight,
-        data: layer
+      // 主路径起始位置
+      const mainStartX = startX + padding;
+      const mainStartY = startY + titleHeight;
+
+      // 计算 skip 路径是否需要额外空间
+      const hasSkipLayers = Array.isArray(skipLayers) && skipLayers.length > 0;
+
+      // 主路径层
+      let currentX = mainStartX;
+      mainLayers.forEach((layer, index) => {
+        layout.layers.push({
+          name: layer.name,
+          type: layer.type,
+          x: currentX,
+          y: mainStartY,
+          width: layerWidth,
+          height: layerHeight,
+          data: layer,
+          path: 'main'
+        });
+        currentX += layerWidth + layerGap;
       });
-      currentX += layerWidth + layerGap;
-    });
 
-    // 计算尺寸
-    layout.width = currentX - layerGap + padding - startX;
-    layout.height = titleHeight + arcRadius + layerHeight + padding;
+      // skip 路径（如果有的话）
+      let skipX = mainStartX;
+      if (hasSkipLayers) {
+        const skipStartY = mainStartY + layerHeight + LAYOUT_CONFIG.branchGap;
 
-    // 主路径连接
-    layout.connections = calculateConnections(layout.layers);
+        skipLayers.forEach((layer, index) => {
+          layout.layers.push({
+            name: layer.name,
+            type: layer.type,
+            x: skipX,
+            y: skipStartY,
+            width: layerWidth,
+            height: layerHeight,
+            data: layer,
+            path: 'skip'
+          });
+          skipX += layerWidth + layerGap;
+        });
+      }
 
-    // skip connection（arc 样式）
-    const firstLayer = layout.layers[0];
-    const lastLayer = layout.layers[layout.layers.length - 1];
+      // 计算尺寸 - 需要考虑主路径和 skip 路径的最大宽度
+      const mainEndX = currentX - layerGap;
+      const skipEndX = skipX - layerGap;
+      const maxEndX = Math.max(mainEndX, skipEndX);
+      layout.width = maxEndX + padding - startX;
+      layout.height = hasSkipLayers
+        ? titleHeight + layerHeight * 2 + LAYOUT_CONFIG.branchGap + padding
+        : titleHeight + layerHeight + padding;
 
-    layout.skipConnection = {
-      type: 'arc',
-      startX: firstLayer.x + layerWidth / 2,
-      startY: firstLayer.y,
-      endX: lastLayer.x + layerWidth / 2,
-      endY: lastLayer.y,
-      radius: arcRadius
-    };
+      // 主路径连接
+      layout.connections = calculateConnections(
+        layout.layers.filter(l => l.path === 'main')
+      );
+
+      // skip connection（parallel 样式）
+      layout.skipConnection = {
+        type: 'parallel',
+        startX: mainStartX,
+        endX: maxEndX
+      };
+
+    } else {
+      // arc 样式（默认）：主路径水平，skip 弧线在上
+      const mainStartY = startY + titleHeight + arcRadius;
+
+      // 主路径层
+      let currentX = startX + padding;
+      mainLayers.forEach((layer, index) => {
+        layout.layers.push({
+          name: layer.name,
+          type: layer.type,
+          x: currentX,
+          y: mainStartY,
+          width: layerWidth,
+          height: layerHeight,
+          data: layer
+        });
+        currentX += layerWidth + layerGap;
+      });
+
+      // 计算尺寸
+      layout.width = currentX - layerGap + padding - startX;
+      layout.height = titleHeight + arcRadius + layerHeight + padding;
+
+      // 主路径连接
+      layout.connections = calculateConnections(layout.layers);
+
+      // skip connection（arc 样式）
+      const firstLayer = layout.layers[0];
+      const lastLayer = layout.layers[layout.layers.length - 1];
+
+      layout.skipConnection = {
+        type: 'arc',
+        startX: firstLayer.x + layerWidth / 2,
+        startY: firstLayer.y,
+        endX: lastLayer.x + layerWidth / 2,
+        endY: lastLayer.y,
+        radius: arcRadius
+      };
+    }
   }
 
   // fork 和 merge 点
@@ -772,8 +1109,9 @@ function calculateResidualBlockLayout(block, layout, startX, startY) {
  * 计算 stack block 布局
  * expand=false：显示一次，带重复标记
  * expand=true：展开所有重复
+ * vertical 方向：层垂直排列
  */
-function calculateStackBlockLayout(block, layout, startX, startY) {
+function calculateStackBlockLayout(block, layout, startX, startY, direction = 'horizontal') {
   const layerWidth = LAYOUT_CONFIG.layerWidth;
   const layerHeight = LAYOUT_CONFIG.layerHeight;
   const layerGap = LAYOUT_CONFIG.layerGap;
@@ -786,73 +1124,145 @@ function calculateStackBlockLayout(block, layout, startX, startY) {
 
   if (layers.length === 0) return;
 
-  // 标题区域高度
+  // 标题区域高度/宽度
   const titleHeight = LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.blockTitleGap;
+  const titleWidth = LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.blockTitleGap;
 
-  const contentStartX = startX + padding;
-  const contentStartY = startY + titleHeight;
+  if (direction === 'vertical') {
+    // 垂直布局
+    const contentStartX = startX + titleWidth;
+    const contentStartY = startY + padding;
 
-  if (expand) {
-    // 展开所有重复
-    let currentX = contentStartX;
+    if (expand) {
+      // 展开所有重复（垂直排列）
+      let currentY = contentStartY;
 
-    for (let r = 0; r < repeat; r++) {
+      for (let r = 0; r < repeat; r++) {
+        layers.forEach((layer, index) => {
+          const layerName = repeat > 1 ? `${layer.name}_${r + 1}` : layer.name;
+          layout.layers.push({
+            name: layerName,
+            type: layer.type,
+            x: contentStartX,
+            y: currentY,
+            width: layerWidth,
+            height: layerHeight,
+            data: layer,
+            repeatIndex: r
+          });
+          currentY += layerHeight + layerGap;
+        });
+
+        // 循环之间额外间距（除了最后一次）
+        if (r < repeat - 1) {
+          currentY += stackLoopGap - layerGap;
+        }
+      }
+
+      layout.width = titleWidth + layerWidth + padding;
+      layout.height = currentY - layerGap + padding - startY;
+
+      // 连接（垂直）
+      layout.connections = calculateConnections(layout.layers, 'vertical');
+
+    } else {
+      // 只显示一次，带重复标记（垂直排列）
+      let currentY = contentStartY;
+
       layers.forEach((layer, index) => {
-        const layerName = repeat > 1 ? `${layer.name}_${r + 1}` : layer.name;
         layout.layers.push({
-          name: layerName,
+          name: layer.name,
+          type: layer.type,
+          x: contentStartX,
+          y: currentY,
+          width: layerWidth,
+          height: layerHeight,
+          data: layer
+        });
+        currentY += layerHeight + layerGap;
+      });
+
+      layout.width = titleWidth + layerWidth + padding;
+      layout.height = currentY - layerGap + padding - startY;
+
+      // 重复标记
+      layout.repeatMarker = {
+        count: repeat,
+        x: contentStartX + layerWidth / 2,
+        y: currentY + 10
+      };
+
+      // 连接（垂直）
+      layout.connections = calculateConnections(layout.layers, 'vertical');
+    }
+
+  } else {
+    // 水平布局（原有逻辑）
+    const contentStartX = startX + padding;
+    const contentStartY = startY + titleHeight;
+
+    if (expand) {
+      // 展开所有重复
+      let currentX = contentStartX;
+
+      for (let r = 0; r < repeat; r++) {
+        layers.forEach((layer, index) => {
+          const layerName = repeat > 1 ? `${layer.name}_${r + 1}` : layer.name;
+          layout.layers.push({
+            name: layerName,
+            type: layer.type,
+            x: currentX,
+            y: contentStartY,
+            width: layerWidth,
+            height: layerHeight,
+            data: layer,
+            repeatIndex: r
+          });
+          currentX += layerWidth + layerGap;
+        });
+
+        // 循环之间额外间距（除了最后一次）
+        if (r < repeat - 1) {
+          currentX += stackLoopGap - layerGap;
+        }
+      }
+
+      layout.width = currentX - layerGap + padding - startX;
+      layout.height = titleHeight + layerHeight + padding;
+
+      // 连接
+      layout.connections = calculateConnections(layout.layers);
+
+    } else {
+      // 只显示一次，带重复标记
+      let currentX = contentStartX;
+
+      layers.forEach((layer, index) => {
+        layout.layers.push({
+          name: layer.name,
           type: layer.type,
           x: currentX,
           y: contentStartY,
           width: layerWidth,
           height: layerHeight,
-          data: layer,
-          repeatIndex: r
+          data: layer
         });
         currentX += layerWidth + layerGap;
       });
 
-      // 循环之间额外间距（除了最后一次）
-      if (r < repeat - 1) {
-        currentX += stackLoopGap - layerGap;
-      }
+      layout.width = currentX - layerGap + padding - startX;
+      layout.height = titleHeight + layerHeight + padding;
+
+      // 重复标记
+      layout.repeatMarker = {
+        count: repeat,
+        x: contentStartX + (currentX - contentStartX - layerGap) / 2,
+        y: contentStartY + layerHeight + 10
+      };
+
+      // 连接
+      layout.connections = calculateConnections(layout.layers);
     }
-
-    layout.width = currentX - layerGap + padding - startX;
-    layout.height = titleHeight + layerHeight + padding;
-
-    // 连接
-    layout.connections = calculateConnections(layout.layers);
-
-  } else {
-    // 只显示一次，带重复标记
-    let currentX = contentStartX;
-
-    layers.forEach((layer, index) => {
-      layout.layers.push({
-        name: layer.name,
-        type: layer.type,
-        x: currentX,
-        y: contentStartY,
-        width: layerWidth,
-        height: layerHeight,
-        data: layer
-      });
-      currentX += layerWidth + layerGap;
-    });
-
-    layout.width = currentX - layerGap + padding - startX;
-    layout.height = titleHeight + layerHeight + padding;
-
-    // 重复标记
-    layout.repeatMarker = {
-      count: repeat,
-      x: contentStartX + (currentX - contentStartX - layerGap) / 2,
-      y: contentStartY + layerHeight + 10
-    };
-
-    // 连接
-    layout.connections = calculateConnections(layout.layers);
   }
 }
 
