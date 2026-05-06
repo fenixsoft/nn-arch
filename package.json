@@ -1,6 +1,6 @@
 {
   "name": "@icyfenix-dmla/nn-arch",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "神经网络架构可视化工具 - 输入 YAML 格式的网络定义，生成 SVG 架构图",
   "main": "src/nn-arch.js",
   "files": [
