@@ -130,10 +130,19 @@ function calculateHorizontalLayout(network, layout) {
     });
   }
 
-  // 计算总尺寸
+  // 计算总尺寸 - 需要考虑 blocks 可能向下延伸
   const lastLayer = layout.layers[layout.layers.length - 1];
   layout.width = lastLayer ? lastLayer.x + lastLayer.width + LAYOUT_CONFIG.startX : LAYOUT_CONFIG.startX * 2;
-  layout.height = currentY + layerHeight + LAYOUT_CONFIG.bottomPadding;
+
+  // 计算 maxY：考虑所有层和所有 block 的高度
+  let maxY = currentY + layerHeight;
+  layout.blocks.forEach(block => {
+    if (block.y + block.height > maxY) {
+      maxY = block.y + block.height;
+    }
+  });
+
+  layout.height = maxY + LAYOUT_CONFIG.bottomPadding;
 
   // 计算标题位置（居中，下方留空隙）
   layout.title.x = layout.width / 2;
