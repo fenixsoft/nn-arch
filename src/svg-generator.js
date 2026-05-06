@@ -258,7 +258,10 @@ function getLayerDetail(layer) {
     case 'input':
       return data.size;
     case 'conv':
-      return `k=${data.kernel}${data.stride ? `, s=${data.stride}` : ''}`;
+      let convDetail = `k=${data.kernel}`;
+      if (data.channels) convDetail += `, c=${data.channels}`;
+      if (data.stride) convDetail += `, s=${data.stride}`;
+      return convDetail;
     case 'pool':
       return `k=${data.kernel}${data.stride ? `, s=${data.stride}` : ''}`;
     case 'fc':
