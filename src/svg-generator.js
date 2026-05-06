@@ -301,6 +301,96 @@ function generateErrorSvg(errorMessage) {
 }
 
 /**
+ * 生成块容器 SVG
+ * @param {object} block - 块布局数据
+ * @returns {string} SVG 字符串
+ */
+function generateBlock(block) {
+  const parts = [];
+  const colors = COLORS[`block_${block.type}`] || COLORS.block_residual;
+  const centerX = block.x + block.width / 2;
+
+  // 容器矩形（虚线边框）
+  parts.push(`<rect x="${block.x}" y="${block.y}" width="${block.width}" height="${block.height}" fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="${SVG_CONFIG.strokeWidth}" stroke-dasharray="${9},${9}" rx="${SVG_CONFIG.cornerRadius}"/>`);
+
+  // 标题（block 名称或带重复标记）
+  const titleText = block.repeat ? `${block.name} ×${block.repeat}` : block.name;
+  const titleY = block.titleY || (block.y + SVG_CONFIG.fontSizeSection);
+  parts.push(`<text x="${centerX}" y="${titleY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeSection}" font-weight="bold" font-family="Arial, sans-serif" fill="#333">${titleText}</text>`);
+
+  // 内部层
+  if (block.layers) {
+    block.layers.forEach(layer => {
+      parts.push(generateLayer(layer));
+    });
+  }
+
+  // 并行块：生成 fork/merge 连接
+  if (block.type === 'parallel' && block.forkPoint && block.mergePoint) {
+    parts.push(generateParallelConnections(block));
+  }
+
+  // 残差块：生成 skip 连接
+  if (block.type === 'residual') {
+    parts.push(generateSkipConnection(block));
+  }
+
+  return parts.join('\n');
+}
+
+/**
+ * 生成并行块的 fork/merge 连接线
+ * @param {object} block - 块布局数据
+ * @returns {string} SVG 字符串
+ */
+function generateParallelConnections(block) {
+  const parts = [];
+  const fork = block.forkPoint;
+  const merge = block.mergePoint;
+
+  if (!fork || !merge || !block.layers || block.layers.length === 0) {
+    return '';
+  }
+
+  // 生成从 fork 点到每个分支的连接
+  block.layers.forEach(layer => {
+    const layerCenterY = layer.y + layer.height / 2;
+    // Fork 线：从 fork 点到层左侧
+    parts.push(`<path d="M${fork.x} ${fork.y} L${layer.x} ${layerCenterY}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+    // Merge 线：从层右侧到 merge 点
+    parts.push(`<path d="M${layer.x + layer.width} ${layerCenterY} L${merge.x} ${merge.y}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+  });
+
+  return parts.join('\n');
+}
+
+/**
+ * 生成残差块的 skip 连接
+ * @param {object} block - 块布局数据
+ * @returns {string} SVG 字符串
+ */
+function generateSkipConnection(block) {
+  const parts = [];
+
+  // 弧形样式：在块上方绘制弧形
+  if (block.skipStyle === 'arc' && block.skipArc) {
+    const arc = block.skipArc;
+    const dx = arc.x2 - arc.x1;
+    const dr = Math.abs(dx);
+    // 使用二次贝塞尔曲线绘制弧形
+    parts.push(`<path d="M${arc.x1} ${arc.y1} Q${(arc.x1 + arc.x2) / 2} ${arc.midY} ${arc.x2} ${arc.y2}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+  }
+
+  // 平行样式：在块下方绘制直线
+  if (block.skipStyle === 'parallel' && block.skipLine) {
+    const line = block.skipLine;
+    parts.push(`<path d="M${line.x1} ${line.y1} L${line.x2} ${line.y2}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+  }
+
+  return parts.join('\n');
+}
+
+/**
  * 文本换行辅助函数
  * @param {string} text - 原始文本
  * @param {number} maxChars - 每行最大字符数
@@ -331,6 +421,9 @@ if (typeof module !== 'undefined' && module.exports) {
     generateRowConnection,
     generateSectionRowConnection,
     generateErrorSvg,
+    generateBlock,
+    generateParallelConnections,
+    generateSkipConnection,
     getDisplayName,
     getLayerDetail,
     COLORS,

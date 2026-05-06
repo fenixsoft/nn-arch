@@ -258,6 +258,111 @@ test('COLORS 包含 block 类型颜色', function() {
   assertEqual(COLORS.block_stack.stroke, '#d9b559', 'stack stroke');
 });
 
+test('生成 parallel block SVG', function() {
+  const blockLayout = {
+    name: 'MultiHead',
+    type: 'parallel',
+    x: 100,
+    y: 50,
+    width: 300,
+    height: 200,
+    titleY: 70,
+    layers: [
+      {id: 'q', name: 'Q', type: 'fc', x: 120, y: 90, width: 72, height: 42, data: {size: 64}},
+      {id: 'k', name: 'K', type: 'fc', x: 120, y: 130, width: 72, height: 42, data: {size: 64}},
+      {id: 'v', name: 'V', type: 'fc', x: 120, y: 170, width: 72, height: 42, data: {size: 64}}
+    ],
+    forkPoint: {x: 110, y: 140},
+    mergePoint: {x: 280, y: 140}
+  };
+
+  const svg = generateBlock(blockLayout);
+  assertEqual(svg.includes('rect'), true, '包含容器矩形');
+  assertEqual(svg.includes('MultiHead'), true, '包含 block 名称');
+  assertEqual(svg.includes('Q'), true, '包含分支名称');
+  assertEqual(svg.includes('stroke-dasharray'), true, '包含虚线边框');
+});
+
+test('生成 residual block SVG (arc style)', function() {
+  const blockLayout = {
+    name: 'ResBlock',
+    type: 'residual',
+    x: 100,
+    y: 50,
+    width: 300,
+    height: 200,
+    titleY: 70,
+    skipStyle: 'arc',
+    layers: [
+      {id: 'conv1', name: 'Conv1', type: 'conv', x: 120, y: 90, width: 72, height: 42, data: {kernel: 3}},
+      {id: 'conv2', name: 'Conv2', type: 'conv', x: 220, y: 90, width: 72, height: 42, data: {kernel: 3}}
+    ],
+    skipArc: {
+      x1: 105,
+      y1: 140,
+      x2: 305,
+      y2: 140,
+      midY: 40
+    }
+  };
+
+  const svg = generateBlock(blockLayout);
+  assertEqual(svg.includes('rect'), true, '包含容器矩形');
+  assertEqual(svg.includes('ResBlock'), true, '包含 block 名称');
+  assertEqual(svg.includes('A'), true, '包含弧形路径');
+});
+
+test('生成 residual block SVG (parallel style)', function() {
+  const blockLayout = {
+    name: 'ResBlock2',
+    type: 'residual',
+    x: 100,
+    y: 50,
+    width: 300,
+    height: 200,
+    titleY: 70,
+    skipStyle: 'parallel',
+    layers: [
+      {id: 'conv1', name: 'Conv1', type: 'conv', x: 120, y: 90, width: 72, height: 42, data: {kernel: 3}},
+      {id: 'conv2', name: 'Conv2', type: 'conv', x: 220, y: 90, width: 72, height: 42, data: {kernel: 3}}
+    ],
+    skipLine: {
+      x1: 105,
+      y1: 260,
+      x2: 305,
+      y2: 260
+    }
+  };
+
+  const svg = generateBlock(blockLayout);
+  assertEqual(svg.includes('rect'), true, '包含容器矩形');
+  assertEqual(svg.includes('ResBlock2'), true, '包含 block 名称');
+  assertEqual(svg.includes('stroke-dasharray'), true, '包含虚线边框');
+});
+
+test('生成 stack block SVG', function() {
+  const blockLayout = {
+    name: 'EncoderBlock',
+    type: 'stack',
+    x: 100,
+    y: 50,
+    width: 200,
+    height: 150,
+    titleY: 70,
+    repeat: 6,
+    layers: [
+      {id: 'ff1', name: 'FF1', type: 'fc', x: 120, y: 90, width: 72, height: 42, data: {size: 2048}},
+      {id: 'ff2', name: 'FF2', type: 'fc', x: 120, y: 140, width: 72, height: 42, data: {size: 512}}
+    ]
+  };
+
+  const svg = generateBlock(blockLayout);
+  assertEqual(svg.includes('rect'), true, '包含容器矩形');
+  assertEqual(svg.includes('EncoderBlock'), true, '包含 block 名称');
+  assertEqual(svg.includes('×6'), true, '包含重复标记');
+  assertEqual(svg.includes('stroke-dasharray'), true, '包含虚线边框');
+});
+
 test('生成 Transformer 模板 SVG', function() {
   const transformerYaml = `name: Transformer Encoder
 layout: horizontal
