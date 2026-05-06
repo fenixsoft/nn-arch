@@ -355,6 +355,66 @@ layers_after_blocks:
   assertEqual(result.layersAfterBlocks.length, 3, 'ResNet18 layers_after_blocks 数量');
 });
 
+test('解析 stack block expand 属性', function() {
+  const yaml = `
+blocks:
+  - name: EncoderBlock
+    type: stack
+    repeat: 6
+    expand: true
+    layers:
+      - {name: FF1, type: fc, size: 2048}
+`;
+  const result = parseNetworkYaml(yaml);
+  const block = result.blocks[0];
+  assertEqual(block.expand, true, 'block expand');
+});
+
+test('stack block expand 默认值', function() {
+  const yaml = `
+blocks:
+  - name: EncoderBlock
+    type: stack
+    repeat: 6
+    layers:
+      - {name: FF1, type: fc, size: 2048}
+`;
+  const result = parseNetworkYaml(yaml);
+  const block = result.blocks[0];
+  assertEqual(block.expand, false, '默认 expand 为 false');
+});
+
+test('解析残差块 style 属性', function() {
+  const yaml = `
+blocks:
+  - name: ResBlock1
+    type: residual
+    style: parallel
+    main:
+      - {name: conv1, type: conv, kernel: 3, channels: 64}
+    skip: identity
+    merge: add
+`;
+  const result = parseNetworkYaml(yaml);
+  const block = result.blocks[0];
+  assertEqual(block.style, 'parallel', 'block style');
+});
+
+test('残差块 style 默认值', function() {
+  const yaml = `
+blocks:
+  - name: ResBlock1
+    type: residual
+    main:
+      - {name: conv1, type: conv, kernel: 3, channels: 64}
+    skip: identity
+    merge: add
+`;
+  const result = parseNetworkYaml(yaml);
+  const block = result.blocks[0];
+  assertEqual(block.style, 'arc', '默认 style 为 arc');
+});
+
 test('解析 Transformer 模板', function() {
   const transformerYaml = `name: Transformer Encoder
 layout: horizontal

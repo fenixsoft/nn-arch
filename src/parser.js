@@ -155,7 +155,9 @@ function normalizeBlock(block) {
     merge: block.merge || null,
     repeat: block.repeat || 1,
     act: block.act || null,
-    norm: block.norm || null
+    norm: block.norm || null,
+    style: block.style || 'arc',
+    expand: block.expand || false
   };
 }
 
