@@ -148,6 +148,32 @@ function calculateHorizontalLayout(network, layout) {
   layout.title.x = layout.width / 2;
   layout.title.y = LAYOUT_CONFIG.fontSizeTitle + LAYOUT_CONFIG.titleGap;
 
+  // 垂直居中调整：普通层的高度可能小于 block 高度，需要居中
+  // 计算最大元素高度（用于居中）
+  let maxElementHeight = layerHeight;
+  layout.blocks.forEach(block => {
+    if (block.height > maxElementHeight) {
+      maxElementHeight = block.height;
+    }
+  });
+
+  // 如果 block 高度大于普通层高度，调整普通层的 Y 坐标使其居中
+  if (maxElementHeight > layerHeight) {
+    const yOffset = (maxElementHeight - layerHeight) / 2;
+
+    // 调整初始层
+    layerGroups.initialLayers.forEach(layer => {
+      layer.y += yOffset;
+    });
+
+    // 调整 afterBlocks 层
+    layerGroups.afterBlocks.forEach(layer => {
+      layer.y += yOffset;
+    });
+
+    // block 内部的层不需要调整，因为 block 已经按自己的高度布局了
+  }
+
   // 计算连接箭头（普通层间连接）
   layout.connections = calculateConnections(layout.layers);
 
