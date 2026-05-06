@@ -267,7 +267,7 @@ function getLayerDetail(layer) {
     case 'fc':
       return data.size;
     case 'output':
-      return `${data.size} 类`;
+      return data.size;
     case 'embedding':
       return data.size;
     case 'attention':
