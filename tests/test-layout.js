@@ -333,14 +333,27 @@ layers_after_blocks:
   const network = parseNetworkYaml(resnet18Yaml);
   const layout = calculateLayout(network);
 
-  // ResNet18 当前基础实现只处理 layers
-  assertEqual(layout.layers.length, 3, 'ResNet18 初始层布局数量');
-  assertEqual(layout.connections.length, 2, 'ResNet18 初始层连接数量');
+  // ResNet18 现在包含 blocks，总层数 = 初始层 + block内部层 + afterBlocks
+  // 初始层: 3 (Input, Conv1, Pool1)
+  // block内部: 2 (conv1, conv2)
+  // afterBlocks: 3 (GlobalPool, FC, Output)
+  // 总计: 8 层
+  assertEqual(layout.layers.length, 8, 'ResNet18 总层数量（含 block）');
+  assertEqual(layout.blocks.length, 1, 'ResNet18 block 数量');
+  assertEqual(layout.blockConnections.length, 2, 'ResNet18 block 连接数量（entry + exit）');
 
-  // 验证初始层坐标（放大 300%）
+  // 验证初始层坐标
   const inputLayer = layout.layers.find(l => l.name === 'Input');
   assertEqual(inputLayer !== undefined, true, 'ResNet18 Input 层存在');
   assertEqual(inputLayer.x, 63, 'ResNet18 Input 层 x 坐标');
+
+  // 验证 block 在初始层之后
+  const block = layout.blocks[0];
+  assertEqual(block.x > inputLayer.x, true, 'ResNet18 block 在初始层之后');
+
+  // 验证 afterBlocks 在 block 之后
+  const globalPool = layout.layers.find(l => l.name === 'GlobalPool');
+  assertEqual(globalPool.x > block.x + block.width, true, 'ResNet18 GlobalPool 在 block 之后');
 });
 
 test('计算 Transformer 模板布局', function() {
@@ -365,14 +378,24 @@ layers_after_blocks:
   const network = parseNetworkYaml(transformerYaml);
   const layout = calculateLayout(network);
 
-  // Transformer 当前基础实现只处理 layers
-  assertEqual(layout.layers.length, 2, 'Transformer 初始层布局数量');
-  assertEqual(layout.connections.length, 1, 'Transformer 初始层连接数量');
+  // Transformer 现在包含 blocks，总层数 = 初始层 + block内部层 + afterBlocks
+  // 初始层: 2 (Input, Embedding)
+  // block内部: 2 (FF1, FF2) - expand=false 所以只显示一次
+  // afterBlocks: 1 (Output)
+  // 总计: 5 层
+  assertEqual(layout.layers.length, 5, 'Transformer 总层数量（含 block）');
+  assertEqual(layout.blocks.length, 1, 'Transformer block 数量');
+  assertEqual(layout.blockConnections.length, 2, 'Transformer block 连接数量（entry + exit）');
 
   // 验证层类型正确
   const embeddingLayer = layout.layers.find(l => l.name === 'Embedding');
   assertEqual(embeddingLayer !== undefined, true, 'Transformer Embedding 层存在');
   assertEqual(embeddingLayer.type, 'embedding', 'Transformer Embedding 层类型');
+
+  // 验证 block 有重复标记
+  const block = layout.blocks[0];
+  assertEqual(block.repeatMarker !== undefined, true, 'Transformer block 有重复标记');
+  assertEqual(block.repeatMarker.count, 6, 'Transformer block 重复次数为 6');
 });
 
 // === Block Layout 测试 ===
@@ -511,4 +534,43 @@ test('计算 stack block expand=true 布局', function() {
   assertEqual(blockLayout.type, 'stack', 'block type');
   assertEqual(blockLayout.layers.length, 6, '展开时显示所有重复层（3次 × 2层）');
   assertEqual(blockLayout.repeatMarker, undefined, '展开时无重复标记');
+});
+
+// === Block Integration 测试 ===
+
+test('计算含 blocks 的完整网络布局', function() {
+  const network = {
+    name: 'ResNetMini',
+    layout: 'horizontal',
+    layers: [
+      {id: 'input', name: 'Input', type: 'input', size: '224x224x3'},
+      {id: 'conv1', name: 'Conv1', type: 'conv', kernel: 7, channels: 64}
+    ],
+    sections: [],
+    blocks: [
+      {
+        name: 'ResBlock',
+        type: 'residual',
+        style: 'arc',
+        main: [
+          {id: 'rb1', name: 'conv', type: 'conv', kernel: 3, channels: 64}
+        ],
+        skip: 'identity',
+        merge: 'add'
+      }
+    ],
+    layersAfterBlocks: [
+      {id: 'output', name: 'Output', type: 'output', size: 10}
+    ],
+    connections: [],
+    rowLabels: []
+  };
+
+  const layout = calculateLayout(network);
+  assertEqual(layout.layers.length >= 4, true, '总层数量包含 block 内部层');
+  assertEqual(layout.blocks.length, 1, 'block 布局数量');
+  const blockX = layout.blocks[0].x;
+  const inputLayer = layout.layers.find(l => l.name === 'Input');
+  const outputLayer = layout.layers.find(l => l.name === 'Output');
+  assertEqual(blockX > inputLayer.x, true, 'block 在 Input 之后');
 });

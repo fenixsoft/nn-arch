@@ -58,7 +58,7 @@ function calculateLayout(network) {
 }
 
 /**
- * 计算水平布局（支持换行）
+ * 计算水平布局（支持换行和 blocks）
  */
 function calculateHorizontalLayout(network, layout) {
   let currentX = LAYOUT_CONFIG.startX;
@@ -72,9 +72,16 @@ function calculateHorizontalLayout(network, layout) {
     return;
   }
 
-  // 无 sections 时，单行布局
+  // 记录层分组边界（用于 block 连接）
+  const layerGroups = {
+    initialLayers: [],
+    blocks: [],
+    afterBlocks: []
+  };
+
+  // 1. 处理初始层
   network.layers.forEach((layer, index) => {
-    layout.layers.push({
+    const layerLayout = {
       name: layer.name,
       type: layer.type,
       x: currentX,
@@ -82,10 +89,46 @@ function calculateHorizontalLayout(network, layout) {
       width: layerWidth,
       height: layerHeight,
       data: layer
-    });
-
+    };
+    layout.layers.push(layerLayout);
+    layerGroups.initialLayers.push(layerLayout);
     currentX += layerWidth + LAYOUT_CONFIG.layerGap;
   });
+
+  // 2. 处理 blocks
+  if (network.blocks && network.blocks.length > 0) {
+    network.blocks.forEach((block, blockIndex) => {
+      const blockLayout = calculateBlockLayout(block, currentX, currentY);
+      layout.blocks.push(blockLayout);
+      layerGroups.blocks.push(blockLayout);
+
+      // 将 block 内部层添加到全局 layers 数组
+      blockLayout.layers.forEach(layer => {
+        layout.layers.push(layer);
+      });
+
+      // 更新 currentX 到 block 右边缘
+      currentX = blockLayout.x + blockLayout.width + LAYOUT_CONFIG.layerGap;
+    });
+  }
+
+  // 3. 处理 layers_after_blocks
+  if (network.layersAfterBlocks && network.layersAfterBlocks.length > 0) {
+    network.layersAfterBlocks.forEach((layer, index) => {
+      const layerLayout = {
+        name: layer.name,
+        type: layer.type,
+        x: currentX,
+        y: currentY,
+        width: layerWidth,
+        height: layerHeight,
+        data: layer
+      };
+      layout.layers.push(layerLayout);
+      layerGroups.afterBlocks.push(layerLayout);
+      currentX += layerWidth + LAYOUT_CONFIG.layerGap;
+    });
+  }
 
   // 计算总尺寸
   const lastLayer = layout.layers[layout.layers.length - 1];
@@ -96,8 +139,11 @@ function calculateHorizontalLayout(network, layout) {
   layout.title.x = layout.width / 2;
   layout.title.y = LAYOUT_CONFIG.fontSizeTitle + LAYOUT_CONFIG.titleGap;
 
-  // 计算连接箭头
+  // 计算连接箭头（普通层间连接）
   layout.connections = calculateConnections(layout.layers);
+
+  // 计算 block 连接（层到 block、block 到 block、block 到层）
+  layout.blockConnections = calculateBlockConnections(layerGroups);
 }
 
 /**
@@ -340,6 +386,85 @@ function calculateConnections(layers, direction = 'horizontal') {
         type: 'sequential'
       });
     }
+  }
+
+  return connections;
+}
+
+/**
+ * 计算 block 连接（层到 block、block 到 block、block 到层）
+ * @param {object} layerGroups - 层分组对象 { initialLayers, blocks, afterBlocks }
+ * @returns {array} block 连接列表
+ */
+function calculateBlockConnections(layerGroups) {
+  const connections = [];
+  const layerWidth = LAYOUT_CONFIG.layerWidth;
+  const layerHeight = LAYOUT_CONFIG.layerHeight;
+
+  // 1. initialLayers 到第一个 block 的连接
+  if (layerGroups.initialLayers.length > 0 && layerGroups.blocks.length > 0) {
+    const lastInitialLayer = layerGroups.initialLayers[layerGroups.initialLayers.length - 1];
+    const firstBlock = layerGroups.blocks[0];
+
+    connections.push({
+      from: lastInitialLayer.name,
+      to: firstBlock.name,
+      x1: lastInitialLayer.x + lastInitialLayer.width,
+      y1: lastInitialLayer.y + lastInitialLayer.height / 2,
+      x2: firstBlock.x,
+      y2: firstBlock.y + firstBlock.height / 2,
+      type: 'block-entry'
+    });
+  }
+
+  // 2. block 到 block 的连接
+  for (let i = 0; i < layerGroups.blocks.length - 1; i++) {
+    const fromBlock = layerGroups.blocks[i];
+    const toBlock = layerGroups.blocks[i + 1];
+
+    connections.push({
+      from: fromBlock.name,
+      to: toBlock.name,
+      x1: fromBlock.x + fromBlock.width,
+      y1: fromBlock.y + fromBlock.height / 2,
+      x2: toBlock.x,
+      y2: toBlock.y + toBlock.height / 2,
+      type: 'block-to-block'
+    });
+  }
+
+  // 3. 最后一个 block 到 afterBlocks 的连接
+  if (layerGroups.blocks.length > 0 && layerGroups.afterBlocks.length > 0) {
+    const lastBlock = layerGroups.blocks[layerGroups.blocks.length - 1];
+    const firstAfterLayer = layerGroups.afterBlocks[0];
+
+    connections.push({
+      from: lastBlock.name,
+      to: firstAfterLayer.name,
+      x1: lastBlock.x + lastBlock.width,
+      y1: lastBlock.y + lastBlock.height / 2,
+      x2: firstAfterLayer.x,
+      y2: firstAfterLayer.y + firstAfterLayer.height / 2,
+      type: 'block-exit'
+    });
+  }
+
+  // 4. 如果没有 blocks，但 initialLayers 和 afterBlocks 都有，连接它们
+  if (layerGroups.blocks.length === 0 &&
+      layerGroups.initialLayers.length > 0 &&
+      layerGroups.afterBlocks.length > 0) {
+    const lastInitialLayer = layerGroups.initialLayers[layerGroups.initialLayers.length - 1];
+    const firstAfterLayer = layerGroups.afterBlocks[0];
+
+    connections.push({
+      from: lastInitialLayer.name,
+      to: firstAfterLayer.name,
+      x1: lastInitialLayer.x + lastInitialLayer.width,
+      y1: lastInitialLayer.y + lastInitialLayer.height / 2,
+      x2: firstAfterLayer.x,
+      y2: firstAfterLayer.y + firstAfterLayer.height / 2,
+      type: 'sequential'
+    });
   }
 
   return connections;
