@@ -327,10 +327,9 @@ function calculateSectionsLayout(network, layout) {
  * 计算垂直布局
  */
 function calculateVerticalLayout(network, layout) {
-  let currentX = LAYOUT_CONFIG.startX;
-  let currentY = layout.title.y + 18;
   const layerWidth = LAYOUT_CONFIG.layerWidth;
   const layerHeight = LAYOUT_CONFIG.layerHeight;
+  const startX = LAYOUT_CONFIG.startX;
 
   // 记录层分组边界（用于 block 连接）
   const layerGroups = {
@@ -339,12 +338,32 @@ function calculateVerticalLayout(network, layout) {
     afterBlocks: []
   };
 
-  // 1. 处理初始层
+  // 先计算所有 blocks 的布局以获取最大宽度
+  let maxWidth = layerWidth;
+  const tempBlockLayouts = [];
+
+  if (network.blocks && network.blocks.length > 0) {
+    network.blocks.forEach((block, blockIndex) => {
+      // 计算每个 block 的布局（临时位置）
+      const blockLayout = calculateBlockLayout(block, 0, 0, 'vertical');
+      tempBlockLayouts.push(blockLayout);
+      if (blockLayout.width > maxWidth) {
+        maxWidth = blockLayout.width;
+      }
+    });
+  }
+
+  // 计算整体起始 X（居中）
+  const centerX = startX + maxWidth / 2;
+  const layerStartX = centerX - layerWidth / 2;
+  let currentY = layout.title.y + 18;
+
+  // 1. 处理初始层（居中放置）
   network.layers.forEach((layer, index) => {
     const layerLayout = {
       name: layer.name,
       type: layer.type,
-      x: currentX,
+      x: layerStartX,
       y: currentY,
       width: layerWidth,
       height: layerHeight,
@@ -355,10 +374,11 @@ function calculateVerticalLayout(network, layout) {
     currentY += layerHeight + LAYOUT_CONFIG.layerGap;
   });
 
-  // 2. 处理 blocks
+  // 2. 处理 blocks（居中放置）
   if (network.blocks && network.blocks.length > 0) {
     network.blocks.forEach((block, blockIndex) => {
-      const blockLayout = calculateBlockLayout(block, currentX, currentY, 'vertical');
+      const blockStartX = centerX - tempBlockLayouts[blockIndex].width / 2;
+      const blockLayout = calculateBlockLayout(block, blockStartX, currentY, 'vertical');
       layout.blocks.push(blockLayout);
       layerGroups.blocks.push(blockLayout);
 
@@ -372,13 +392,13 @@ function calculateVerticalLayout(network, layout) {
     });
   }
 
-  // 3. 处理 layers_after_blocks
+  // 3. 处理 layers_after_blocks（居中放置）
   if (network.layersAfterBlocks && network.layersAfterBlocks.length > 0) {
     network.layersAfterBlocks.forEach((layer, index) => {
       const layerLayout = {
         name: layer.name,
         type: layer.type,
-        x: currentX,
+        x: layerStartX,
         y: currentY,
         width: layerWidth,
         height: layerHeight,
@@ -390,20 +410,15 @@ function calculateVerticalLayout(network, layout) {
     });
   }
 
-  // 计算总尺寸 - 需要考虑 blocks 可能向右延伸
-  const lastLayer = layout.layers[layout.layers.length - 1];
+  // 计算总尺寸
   let maxY = currentY;
-  let maxX = currentX + layerWidth;
   layout.blocks.forEach(block => {
-    if (block.x + block.width > maxX) {
-      maxX = block.x + block.width;
-    }
     if (block.y + block.height > maxY) {
       maxY = block.y + block.height;
     }
   });
 
-  layout.width = maxX + LAYOUT_CONFIG.startX;
+  layout.width = maxWidth + startX * 2;
   layout.height = maxY + LAYOUT_CONFIG.bottomPadding;
   layout.title.x = layout.width / 2;
   layout.title.y = LAYOUT_CONFIG.fontSizeTitle + LAYOUT_CONFIG.titleGap;
@@ -695,12 +710,13 @@ function calculateParallelBlockLayout(block, layout, startX, startY, direction =
 
   if (direction === 'vertical') {
     // 垂直布局：分支水平排列（左右并行）
-    let currentX = startX + titleWidth;
+    // 先计算标题区域，再放置内容
+    const contentStartY = startY + titleHeight + padding;
+    let currentX = startX + padding;
     let maxBranchHeight = layerHeight;
 
     branches.forEach((branch, branchIndex) => {
       const branchLayers = [];
-      const contentStartY = startY + padding;
 
       if (Array.isArray(branch)) {
         // 多层分支：垂直排列（上下排列）
@@ -751,21 +767,21 @@ function calculateParallelBlockLayout(block, layout, startX, startY, direction =
       branchLayerGroups.push(branchLayers);
     });
 
-    // 计算容器尺寸
+    // 计算容器尺寸（标题 + 顶部padding + 内容 + 底部padding）
     layout.width = currentX - startX + padding;
-    layout.height = maxBranchHeight + padding * 2;
+    layout.height = titleHeight + padding + maxBranchHeight + padding;
 
-    // 计算 fork 点：block 上方中心
-    const contentWidth = currentX - startX - titleWidth - padding;
+    // 计算 fork 点：block 内容区上方中心（标题下方）
     layout.forkPoint = {
-      x: startX + titleWidth + contentWidth / 2,
-      y: startY + padding / 2
+      x: startX + layout.width / 2,
+      y: startY + titleHeight
     };
 
-    // 计算 merge 点：block 下方中心
+    // 计算 merge 点：最后一层下方（在 block 底部 padding 区域）
+    // contentStartY + maxBranchHeight 是最后一层底部位置
     layout.mergePoint = {
       x: layout.forkPoint.x,
-      y: startY + layout.height - padding / 2
+      y: startY + titleHeight + padding + maxBranchHeight + padding / 2
     };
 
   } else {
