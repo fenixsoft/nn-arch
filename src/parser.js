@@ -39,19 +39,35 @@ function parseNetworkYaml(yamlText) {
     throw new Error('YAML 解析错误: 解析结果为空');
   }
 
+  // 先处理 layers，建立 id -> layer 映射
+  let layers = [];
+  if (parsed.layers) {
+    layers = parsed.layers.map(layer => normalizeLayer(layer));
+  }
+
+  // 验证 id 唯一性
+  const idSet = new Set();
+  for (const layer of layers) {
+    if (idSet.has(layer.id)) {
+      throw new Error(`层 id 重复: "${layer.id}"`);
+    }
+    idSet.add(layer.id);
+  }
+
   const network = {
     name: parsed.name || 'Unnamed Network',
     layout: parsed.layout || 'horizontal',
-    sections: parsed.sections ? parsed.sections.map(s => normalizeSection(s)) : [],
-    layers: [],
+    sections: [],  // 稍后处理
+    layers: layers,
     blocks: parsed.blocks ? parsed.blocks.map(block => normalizeBlock(block)) : [],
     connections: [],
     layersAfterBlocks: parsed.layers_after_blocks ? parsed.layers_after_blocks.map(layer => normalizeLayer(layer)) : [],
     rowLabels: parsed.row_labels || []  // 行间连接标注
   };
 
-  if (parsed.layers) {
-    network.layers = parsed.layers.map(layer => normalizeLayer(layer));
+  // 处理 sections，将层名称转换为 id
+  if (parsed.sections) {
+    network.sections = parsed.sections.map(s => normalizeSection(s, network.layers));
   }
 
   network.connections = generateSequentialConnections(network.layers);
@@ -66,6 +82,7 @@ function parseNetworkYaml(yamlText) {
  */
 function normalizeLayer(layer) {
   return {
+    id: layer.id || layer.name,  // id 默认使用 name，但必须唯一
     name: layer.name,
     type: layer.type,
     size: layer.size || null,
@@ -83,12 +100,25 @@ function normalizeLayer(layer) {
 /**
  * 标准化 section 定义
  * @param {object} section - 原始 section 定义
+ * @param {array} layers - 已标准化的层列表（用于名称到 id 的转换）
  * @returns {object} 标准化后的 section 定义
  */
-function normalizeSection(section) {
+function normalizeSection(section, layers) {
+  // 将 sections.layers 中的名称转换为 id
+  const layerIds = (section.layers || []).map(layerRef => {
+    // 如果已经是 id（直接引用），直接使用
+    // 否则查找对应层的 id
+    const layer = layers.find(l => l.id === layerRef || l.name === layerRef);
+    if (layer) {
+      return layer.id;
+    }
+    // 找不到时返回原始引用（可能是错误）
+    return layerRef;
+  });
+
   return {
     name: section.name,
-    layers: section.layers || [],
+    layers: layerIds,  // 使用 id 而不是 name
     rowLabel: section.row_label || null  // 该 section 后的行间连接标注
   };
 }

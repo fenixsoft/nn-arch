@@ -107,7 +107,7 @@ function calculateSectionsLayout(network, layout) {
 
   // 按 sections 分行
   network.sections.forEach((section, sectionIndex) => {
-    const sectionLayerNames = section.layers;
+    const sectionLayerIds = section.layers;
     const rowStartX = LAYOUT_CONFIG.startX;
 
     // section 的起始 Y（包含标题空间）
@@ -121,8 +121,8 @@ function calculateSectionsLayout(network, layout) {
     let rowCount = 0;
 
     // 将层分配到多行（每行最多 maxLayersPerRow 个）
-    sectionLayerNames.forEach((layerName, idx) => {
-      const layerData = network.layers.find(l => l.name === layerName);
+    sectionLayerIds.forEach((layerId, idx) => {
+      const layerData = network.layers.find(l => l.id === layerId || l.name === layerId);
       if (layerData) {
         // 检查是否需要换行
         const positionInRow = idx % LAYOUT_CONFIG.maxLayersPerRow;

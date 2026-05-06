@@ -129,26 +129,6 @@ test('显示 dropout 信息', function() {
   assertEqual(svg.includes('#d9a55b'), true, 'Dropout 信息使用橙色');
 });
 
-test('层名称包含 +Pool 后缀', function() {
-  const layout = {
-    width: 300, height: 150,
-    title: { x: 150, y: 30, text: 'Test' },
-    sections: [],
-    layers: [{
-      name: 'Conv1',
-      type: 'conv',
-      x: 10, y: 40,
-      width: 216, height: 126,
-      data: {kernel: 3, channels: 64, pool: {kernel: 3}}
-    }],
-    connections: [],
-    rowConnections: [],
-    blocks: []
-  };
-  const svg = generateSvg(layout);
-  assertEqual(svg.includes('Conv1+Pool'), true, '层名称包含 +Pool 后缀');
-});
-
 test('行间连接标注来自 YAML', function() {
   const layout = {
     width: 500, height: 300,

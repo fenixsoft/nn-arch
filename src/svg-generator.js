@@ -187,23 +187,10 @@ function generateLayerContent(layer) {
 }
 
 /**
- * 获取层显示名称（包含附加信息）
+ * 获取层显示名称
  */
 function getDisplayName(layer) {
-  const data = layer.data;
-  let name = layer.name;
-
-  // 如果有 pool 但不是单独层，在名称后添加 +Pool
-  if (data.pool && layer.type !== 'pool') {
-    name += '+Pool';
-  }
-
-  // 如果有 dropout，在名称后添加 +Dropout
-  if (data.dropout && layer.type !== 'dropout') {
-    name += '+Dropout';
-  }
-
-  return name;
+  return layer.name;
 }
 
 /**

@@ -96,6 +96,67 @@ layers:
   assertEqual(result.sections[1].rowLabel, null, '未定义 row_label 为 null');
 });
 
+test('层定义包含 id 属性', function() {
+  const yaml = `
+layers:
+  - {id: layer_1, name: Input, type: input, size: "224x224x3"}
+  - {name: Conv1, type: conv, kernel: 3, channels: 64}
+`;
+  const result = parseNetworkYaml(yaml);
+  assertEqual(result.layers[0].id, 'layer_1', '显式指定的 id');
+  assertEqual(result.layers[1].id, 'Conv1', '默认 id 使用 name');
+});
+
+test('sections.layers 使用 id 引用', function() {
+  const yaml = `
+name: TestNet
+sections:
+  - name: 特征提取器
+    layers: [layer_1, layer_2]
+  - name: 分类器
+    layers: [layer_3]
+layers:
+  - {id: layer_1, name: Input, type: input, size: "224x224x3"}
+  - {id: layer_2, name: Conv1, type: conv, kernel: 3, channels: 64}
+  - {id: layer_3, name: FC1, type: fc, size: 1000}
+`;
+  const result = parseNetworkYaml(yaml);
+  assertEqual(result.sections[0].layers[0], 'layer_1', 'section 使用 id 引用');
+  assertEqual(result.sections[0].layers[1], 'layer_2', 'section 使用 id 引用');
+  assertEqual(result.sections[1].layers[0], 'layer_3', 'section 使用 id 引用');
+});
+
+test('sections.layers 支持名称引用（自动转换为 id）', function() {
+  const yaml = `
+name: TestNet
+sections:
+  - name: 特征提取器
+    layers: [Input, Conv1]  # 使用 name 引用，自动转换为 id
+layers:
+  - {id: input_id, name: Input, type: input, size: "224x224x3"}
+  - {name: Conv1, type: conv, kernel: 3, channels: 64}
+`;
+  const result = parseNetworkYaml(yaml);
+  assertEqual(result.sections[0].layers[0], 'input_id', 'name 引用转换为 id');
+  assertEqual(result.sections[0].layers[1], 'Conv1', 'name 引用转换为默认 id');
+});
+
+test('id 重复时报错', function() {
+  const yaml = `
+layers:
+  - {id: duplicate_id, name: Layer1, type: input}
+  - {id: duplicate_id, name: Layer2, type: conv}
+`;
+  try {
+    parseNetworkYaml(yaml);
+    throw new Error('应该抛出异常但没有');
+  } catch (e) {
+    if (!e.message.includes('id 重复')) {
+      throw new Error('错误信息应包含 id 重复: ' + e.message);
+    }
+  }
+});
+
 test('生成顺序连接', function() {
   const yaml = `
 layers:
