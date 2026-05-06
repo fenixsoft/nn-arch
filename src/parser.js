@@ -47,11 +47,22 @@ function parseNetworkYaml(yamlText) {
 
   // 验证 id 唯一性
   const idSet = new Set();
+  const nameToIdMap = new Map();  // 记录 name -> id 的映射，用于更详细的错误提示
   for (const layer of layers) {
-    if (idSet.has(layer.id)) {
-      throw new Error(`层 id 重复: "${layer.id}"`);
+    const layerId = layer.id;
+    const layerName = layer.name;
+
+    if (idSet.has(layerId)) {
+      // 检查是否是因为 name 重复且没有显式 id 导致的
+      const existingLayer = nameToIdMap.get(layerId);
+      if (existingLayer && existingLayer.id === existingLayer.name) {
+        // 原层也是用 name 作为默认 id，说明是因为 name 重复
+        throw new Error(`层 name 重复导致 id 冲突: "${layerId}"。\n提示: 多个层使用相同 name 时，请为每个层指定不同的 id，且 YAML inline 格式中冒号后需有空格（如 id: block1）`);
+      }
+      throw new Error(`层 id 重复: "${layerId}"`);
     }
-    idSet.add(layer.id);
+    idSet.add(layerId);
+    nameToIdMap.set(layerName, layer);
   }
 
   const network = {
