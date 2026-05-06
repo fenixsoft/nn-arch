@@ -554,3 +554,21 @@ blocks:
     }
   }
 });
+
+// === 模板属性测试 ===
+
+test('ResNet18 模板包含 style 属性', function() {
+  const resnetYaml = getTemplate('resnet18');
+  const result = parseNetworkYaml(resnetYaml);
+  assertEqual(result.blocks.length, 2, 'ResNet18 blocks 数量');
+  // 第一块默认 arc，第二块显式 parallel
+  assertEqual(result.blocks[0].style, 'arc', 'ResBlock1 style 默认 arc');
+  assertEqual(result.blocks[1].style, 'parallel', 'ResBlock2 style');
+});
+
+test('Transformer 模板包含 expand 属性', function() {
+  const transformerYaml = getTemplate('transformer');
+  const result = parseNetworkYaml(transformerYaml);
+  assertEqual(result.blocks.length, 1, 'Transformer blocks 数量');
+  assertEqual(result.blocks[0].expand, false, 'expand 默认 false');
+});

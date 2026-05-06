@@ -42,6 +42,10 @@ globalThis.jsyaml = jsyaml;
 const parser = require('../src/parser.js');
 globalThis.parseNetworkYaml = parser.parseNetworkYaml;
 
+// 加载 templates.js
+const templates = require('../src/templates.js');
+globalThis.getTemplate = templates.getTemplate;
+
 // 加载 layout.js
 const layout = require('../src/layout.js');
 globalThis.calculateLayout = layout.calculateLayout;
