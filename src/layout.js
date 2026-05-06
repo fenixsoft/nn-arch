@@ -356,10 +356,7 @@ function calculateVerticalLayout(network, layout) {
   // 计算整体起始 X（居中）
   const centerX = startX + maxWidth / 2;
   const layerStartX = centerX - layerWidth / 2;
-
-  // 计算标题高度，确保内容在标题下方
-  const titleHeight = LAYOUT_CONFIG.fontSizeTitle + LAYOUT_CONFIG.titleGap;
-  let currentY = LAYOUT_CONFIG.startY + titleHeight;
+  let currentY = LAYOUT_CONFIG.startY;
 
   // 1. 处理初始层（居中放置）
   network.layers.forEach((layer, index) => {
