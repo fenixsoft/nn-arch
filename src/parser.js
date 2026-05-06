@@ -147,7 +147,8 @@ function normalizeLayer(layer) {
     act: layer.act || null,
     pool: layer.pool || null,
     dropout: layer.dropout || false,
-    norm: layer.norm || null
+    norm: layer.norm || null,
+    label: layer.label || null  // note 类型的额外提示
   };
 }
 

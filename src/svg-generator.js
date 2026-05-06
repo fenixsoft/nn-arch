@@ -187,7 +187,7 @@ function generateLayerContent(layer) {
   // note 类型：显示 name，label 作为额外提示（如有）
   if (layer.type === 'note') {
     const nameY = layer.y + layer.height / 2 - SVG_CONFIG.fontSizeDetail / 2;
-    let content = `<text x="${centerX}" y="${nameY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeName}" font-style="italic" font-family="Arial, sans-serif" fill="#666">${layer.name}</text>`;
+    let content = `<text x="${centerX}" y="${nameY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeName}" font-family="Arial, sans-serif" fill="#666">${layer.name}</text>`;
 
     // 如果有 label，在 name 下方显示
     if (data.label) {
