@@ -450,10 +450,20 @@ function calculateVerticalLayout(network, layout) {
   layout.title.y = LAYOUT_CONFIG.fontSizeTitle + LAYOUT_CONFIG.titleGap;
 
   // 计算连接箭头（垂直方向）
+  // 1. 初始层之间的连接
   layout.connections = calculateConnections(
     layerGroups.initialLayers,
     'vertical'
   );
+
+  // 2. afterBlocks 层之间的连接
+  if (layerGroups.afterBlocks.length > 1) {
+    const afterBlockConnections = calculateConnections(
+      layerGroups.afterBlocks,
+      'vertical'
+    );
+    layout.connections = layout.connections.concat(afterBlockConnections);
+  }
 
   // 计算 block 连接
   layout.blockConnections = calculateBlockConnectionsVertical(layerGroups);
@@ -1026,9 +1036,9 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
       // parallel 样式：主路径和 skip 并行排列
       const skipLayers = block.skip || [];
 
-      // 主路径起始位置
+      // 主路径起始位置 - 与 arc 样式保持一致，预留 arcRadius 空间
       const mainStartX = startX + padding;
-      const mainStartY = startY + titleHeight;
+      const mainStartY = startY + titleHeight + arcRadius;
 
       // 计算 skip 路径是否需要额外空间
       const hasSkipLayers = Array.isArray(skipLayers) && skipLayers.length > 0;
@@ -1074,20 +1084,22 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
       const skipEndX = skipX - layerGap;
       const maxEndX = Math.max(mainEndX, skipEndX);
       layout.width = maxEndX + padding - startX;
-      layout.height = hasSkipLayers
-        ? titleHeight + layerHeight * 2 + LAYOUT_CONFIG.branchGap + padding
-        : titleHeight + layerHeight + padding;
+
+      // 高度计算：与 arc 样式保持一致
+      layout.height = titleHeight + arcRadius + layerHeight + padding;
 
       // 主路径连接
       layout.connections = calculateConnections(
         layout.layers.filter(l => l.path === 'main')
       );
 
-      // skip connection（parallel 样式）
+      // skip connection（parallel 样式）- 在预留的 arcRadius 空间绘制
       layout.skipConnection = {
         type: 'parallel',
         startX: mainStartX,
-        endX: maxEndX
+        endX: maxEndX,
+        startY: startY + titleHeight,
+        endY: mainStartY + layerHeight
       };
 
     } else {
