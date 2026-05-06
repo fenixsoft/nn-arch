@@ -106,6 +106,19 @@ function parseNetworkYaml(yamlText) {
     block.layers.forEach(validateBlockLayerId);
   }
 
+  // 验证 block 不能为空
+  for (const block of network.blocks) {
+    if (block.type === 'residual' && (!block.main || block.main.length === 0)) {
+      throw new Error(`Block "${block.name}" 的 main 不能为空`);
+    }
+    if (block.type === 'parallel' && (!block.branches || block.branches.length === 0)) {
+      throw new Error(`Block "${block.name}" 的 branches 不能为空`);
+    }
+    if (block.type === 'stack' && (!block.layers || block.layers.length === 0)) {
+      throw new Error(`Block "${block.name}" 的 layers 不能为空`);
+    }
+  }
+
   // 处理 sections，将层名称转换为 id
   if (parsed.sections) {
     network.sections = parsed.sections.map(s => normalizeSection(s, network.layers));

@@ -499,3 +499,58 @@ layers_after_blocks:
   assertEqual(result.blocks[0].repeat, 6, 'Transformer block 重复次数');
   assertEqual(result.layersAfterBlocks.length, 1, 'Transformer layers_after_blocks 数量');
 });
+
+test('block main 为空时报错', function() {
+  const yaml = `
+blocks:
+  - name: EmptyBlock
+    type: residual
+    main: []
+    skip: identity
+    merge: add
+`;
+  try {
+    parseNetworkYaml(yaml);
+    throw new Error('应该抛出异常但没有');
+  } catch (e) {
+    if (!e.message.includes('不能为空')) {
+      throw new Error('错误信息应包含不能为空: ' + e.message);
+    }
+  }
+});
+
+test('block branches 为空时报错', function() {
+  const yaml = `
+blocks:
+  - name: EmptyBlock
+    type: parallel
+    branches: []
+    merge: concat
+`;
+  try {
+    parseNetworkYaml(yaml);
+    throw new Error('应该抛出异常但没有');
+  } catch (e) {
+    if (!e.message.includes('不能为空')) {
+      throw new Error('错误信息应包含不能为空: ' + e.message);
+    }
+  }
+});
+
+test('block layers 为空时报错', function() {
+  const yaml = `
+blocks:
+  - name: EmptyBlock
+    type: stack
+    repeat: 6
+    layers: []
+`;
+  try {
+    parseNetworkYaml(yaml);
+    throw new Error('应该抛出异常但没有');
+  } catch (e) {
+    if (!e.message.includes('不能为空')) {
+      throw new Error('错误信息应包含不能为空: ' + e.message);
+    }
+  }
+});
