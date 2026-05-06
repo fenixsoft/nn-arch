@@ -61,6 +61,7 @@ globalThis.generateSection = svgGenerator.generateSection;
 globalThis.generateLayer = svgGenerator.generateLayer;
 globalThis.generateLayerContent = svgGenerator.generateLayerContent;
 globalThis.generateConnection = svgGenerator.generateConnection;
+globalThis.generateBlockConnection = svgGenerator.generateBlockConnection;
 globalThis.generateBlock = svgGenerator.generateBlock;
 globalThis.generateParallelConnections = svgGenerator.generateParallelConnections;
 globalThis.generateSkipConnection = svgGenerator.generateSkipConnection;

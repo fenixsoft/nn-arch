@@ -393,3 +393,30 @@ layers_after_blocks:
   assertEqual(svg.includes('512 tokens'), true, 'Transformer SVG 显示 Input size');
   assertEqual(svg.includes('#f8f8e8'), true, 'Transformer SVG 包含 embedding 层颜色');
 });
+
+test('生成含 blocks 的完整网络 SVG', function() {
+  const yaml = `
+name: MiniNet
+layout: horizontal
+layers:
+  - {id: input, name: Input, type: input, size: "10"}
+blocks:
+  - name: ResBlock
+    type: residual
+    main:
+      - {id: conv, name: conv, type: conv, kernel: 3, channels: 64}
+    skip: identity
+    merge: add
+layers_after_blocks:
+  - {id: output, name: Output, type: output, size: 10}
+`;
+  const network = parseNetworkYaml(yaml);
+  const layout = calculateLayout(network);
+  const svg = generateSvg(layout);
+
+  assertEqual(svg.includes('<svg'), true, 'SVG 开头');
+  assertEqual(svg.includes('MiniNet'), true, '包含网络名称');
+  assertEqual(svg.includes('Input'), true, '包含 Input 层');
+  assertEqual(svg.includes('ResBlock'), true, '包含 block 名称');
+  assertEqual(svg.includes('Output'), true, '包含 Output 层');
+});

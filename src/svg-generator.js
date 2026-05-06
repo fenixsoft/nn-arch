@@ -70,15 +70,43 @@ function generateSvg(layout) {
     svgParts.push(generateSection(section));
   });
 
-  // 层
+  // 收集 block 内部层的名称，用于跳过
+  const blockInternalLayerNames = new Set();
+  if (layout.blocks && layout.blocks.length > 0) {
+    layout.blocks.forEach(block => {
+      if (block.layers) {
+        block.layers.forEach(layer => {
+          blockInternalLayerNames.add(layer.name);
+        });
+      }
+    });
+  }
+
+  // 层（跳过 block 内部层，它们由 generateBlock 渲染）
   layout.layers.forEach(layer => {
-    svgParts.push(generateLayer(layer));
+    if (!blockInternalLayerNames.has(layer.name)) {
+      svgParts.push(generateLayer(layer));
+    }
   });
+
+  // blocks（渲染块容器和内部层）
+  if (layout.blocks && layout.blocks.length > 0) {
+    layout.blocks.forEach(block => {
+      svgParts.push(generateBlock(block));
+    });
+  }
 
   // 连接箭头
   layout.connections.forEach(conn => {
     svgParts.push(generateConnection(conn));
   });
+
+  // block 连接（入口/出口）
+  if (layout.blockConnections && layout.blockConnections.length > 0) {
+    layout.blockConnections.forEach(conn => {
+      svgParts.push(generateBlockConnection(conn));
+    });
+  }
 
   // section 内换行连接（折线）
   if (layout.sectionRowConnections) {
@@ -257,6 +285,16 @@ function generateSectionRowConnection(conn) {
 }
 
 /**
+ * 生成 block 连接（入口/出口箭头）
+ * @param {object} conn - 连接信息
+ * @returns {string} SVG 字符串
+ */
+function generateBlockConnection(conn) {
+  // block 入口/出口连接（直线）
+  return `<path d="M${conn.x1} ${conn.y1} L${conn.x2} ${conn.y2}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`;
+}
+
+/**
  * 生成错误提示 SVG
  * @param {string} errorMessage - 错误信息
  * @returns {string} SVG 字符串
@@ -420,6 +458,7 @@ if (typeof module !== 'undefined' && module.exports) {
     generateConnection,
     generateRowConnection,
     generateSectionRowConnection,
+    generateBlockConnection,
     generateErrorSvg,
     generateBlock,
     generateParallelConnections,
