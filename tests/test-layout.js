@@ -441,6 +441,39 @@ test('计算 residual block parallel 样式布局', function() {
   assertEqual(blockLayout.skipConnection.type, 'parallel', 'skip connection type');
 });
 
+test('计算 residual block parallel 样式布局 - skip路径更长', function() {
+  // 测试 skip 路径层数多于 main 路径时容器宽度是否正确
+  const block = {
+    name: 'ResBlock',
+    type: 'residual',
+    style: 'parallel',
+    main: [
+      {name: 'conv1', type: 'conv', kernel: 3, channels: 64}
+    ],
+    skip: [
+      {name: 'skip_conv1', type: 'conv', kernel: 1, channels: 64},
+      {name: 'skip_conv2', type: 'conv', kernel: 1, channels: 64},
+      {name: 'skip_conv3', type: 'conv', kernel: 1, channels: 64}
+    ],
+    merge: 'add'
+  };
+
+  const blockLayout = calculateBlockLayout(block, 100, 50);
+  const mainLayers = blockLayout.layers.filter(l => l.path === 'main');
+  const skipLayers = blockLayout.layers.filter(l => l.path === 'skip');
+
+  assertEqual(mainLayers.length, 1, '主路径层数量');
+  assertEqual(skipLayers.length, 3, 'skip路径层数量');
+
+  // 验证所有层都在容器宽度范围内
+  const rightEdge = blockLayout.x + blockLayout.width;
+  for (const layer of skipLayers) {
+    const layerRightEdge = layer.x + layer.width;
+    assertEqual(layerRightEdge <= rightEdge, true,
+      `skip层 "${layer.name}" 右边缘 (${layerRightEdge}) 应在容器右边缘 (${rightEdge}) 内`);
+  }
+});
+
 test('计算 stack block expand=false 布局', function() {
   const block = {
     name: 'EncoderStack',

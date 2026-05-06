@@ -496,9 +496,9 @@ function calculateResidualBlockLayout(block, layout, startX, startY) {
     });
 
     // skip 路径（如果有的话）
+    let skipX = mainStartX;
     if (hasSkipLayers) {
       const skipStartY = mainStartY + layerHeight + LAYOUT_CONFIG.branchGap;
-      let skipX = mainStartX;
 
       skipLayers.forEach((layer, index) => {
         layout.layers.push({
@@ -515,8 +515,11 @@ function calculateResidualBlockLayout(block, layout, startX, startY) {
       });
     }
 
-    // 计算尺寸
-    layout.width = currentX - layerGap + padding - startX;
+    // 计算尺寸 - 需要考虑主路径和 skip 路径的最大宽度
+    const mainEndX = currentX - layerGap;
+    const skipEndX = skipX - layerGap;
+    const maxEndX = Math.max(mainEndX, skipEndX);
+    layout.width = maxEndX + padding - startX;
     layout.height = hasSkipLayers
       ? titleHeight + layerHeight * 2 + LAYOUT_CONFIG.branchGap + padding
       : titleHeight + layerHeight + padding;
@@ -530,7 +533,7 @@ function calculateResidualBlockLayout(block, layout, startX, startY) {
     layout.skipConnection = {
       type: 'parallel',
       startX: mainStartX,
-      endX: currentX - layerGap
+      endX: maxEndX
     };
 
   } else {
