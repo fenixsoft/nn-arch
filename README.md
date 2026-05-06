@@ -152,6 +152,62 @@ layers:                          # 所有层定义
 | `embedding` | `size` | - |
 | `attention` | `heads` | `type` |
 
+### 支持的块类型
+
+除了基本层类型外，还支持复杂的拓扑结构块：
+
+| 类型 | 说明 | 必要参数 |
+|------|------|----------|
+| `residual` | 残差块：主路径 + 跳跃连接 | `main` |
+| `parallel` | 并行块：多个分支并行执行 | `branches` |
+| `stack` | 重复块：层结构的多次重复 | `layers`, `repeat` |
+
+#### 块属性说明
+
+| 属性 | 适用类型 | 说明 |
+|------|----------|------|
+| `style` | residual | 布局样式：`arc`（弧形）或 `parallel`（并行） |
+| `expand` | stack | 是否全部展开：`true` 显示每层，`false` 显示简化形式 |
+| `main` | residual | 主路径层列表 |
+| `branches` | parallel | 分支层列表（每个分支是一个层列表） |
+| `layers` | stack | 重复的层列表 |
+| `skip` | residual | 跳跃连接类型：`identity`（恒等）或 `projection`（投影） |
+| `merge` | residual, parallel | 合并方式：`add`（相加）或 `concat`（拼接） |
+| `repeat` | stack | 重复次数 |
+
+#### YAML 示例
+
+```yaml
+blocks:
+  # 残差块示例
+  - name: ResBlock
+    type: residual
+    style: arc              # arc 或 parallel
+    main:
+      - {id: conv1, name: conv1, type: conv, kernel: 3, channels: 64}
+      - {id: conv2, name: conv2, type: conv, kernel: 3, channels: 64}
+    skip: identity
+    merge: add
+    act: ReLU
+
+  # 并行块示例
+  - name: MultiHead
+    type: parallel
+    branches:
+      - {id: q, name: Q, type: fc, size: 64}
+      - {id: k, name: K, type: fc, size: 64}
+      - {id: v, name: V, type: fc, size: 64}
+    merge: concat
+
+  # 重复块示例
+  - name: EncoderBlock
+    type: stack
+    repeat: 6
+    expand: false           # true 全部展开
+    layers:
+      - {id: ff1, name: FF1, type: fc, size: 2048}
+```
+
 ### 换行机制
 
 当 section 内的层超过 6 个时，会自动换行显示，换行处会有折线连接。
