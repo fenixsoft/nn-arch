@@ -15,7 +15,11 @@ const COLORS = {
   norm: { fill: '#f8e8f8', stroke: '#d959f0' },
   activation: { fill: '#f8f0e8', stroke: '#d9b559' },
   merge: { fill: '#f0f8e8', stroke: '#59d9b5' },
-  identity: { fill: '#f8f8f8', stroke: '#999999' }
+  identity: { fill: '#f8f8f8', stroke: '#999999' },
+  // Block colors
+  block_residual: { fill: '#e8f0f8', stroke: '#5990d9' },
+  block_parallel: { fill: '#e8f8f0', stroke: '#59d9b5' },
+  block_stack: { fill: '#f8f8e8', stroke: '#d9b559' }
 };
 
 // 样式配置（放大 300%，箭头缩小 50%）

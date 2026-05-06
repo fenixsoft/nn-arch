@@ -249,6 +249,15 @@ layers_after_blocks:
   assertEqual(svg.includes('k=7'), true, 'ResNet18 SVG 显示 Conv1 kernel 参数');
 });
 
+test('COLORS 包含 block 类型颜色', function() {
+  assertEqual(COLORS.block_residual.fill, '#e8f0f8', 'residual fill');
+  assertEqual(COLORS.block_residual.stroke, '#5990d9', 'residual stroke');
+  assertEqual(COLORS.block_parallel.fill, '#e8f8f0', 'parallel fill');
+  assertEqual(COLORS.block_parallel.stroke, '#59d9b5', 'parallel stroke');
+  assertEqual(COLORS.block_stack.fill, '#f8f8e8', 'stack fill');
+  assertEqual(COLORS.block_stack.stroke, '#d9b559', 'stack stroke');
+});
+
 test('生成 Transformer 模板 SVG', function() {
   const transformerYaml = `name: Transformer Encoder
 layout: horizontal
