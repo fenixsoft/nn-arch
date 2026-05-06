@@ -167,6 +167,14 @@ test('布局配置常量正确', function() {
   assertEqual(LAYOUT_CONFIG.maxLayersPerRow, 6, '每行最大层数');
 });
 
+test('LAYOUT_CONFIG 包含 block 相关参数', function() {
+  assertEqual(LAYOUT_CONFIG.blockPadding, 27, 'blockPadding');
+  assertEqual(LAYOUT_CONFIG.blockTitleGap, 18, 'blockTitleGap');
+  assertEqual(LAYOUT_CONFIG.branchGap, 27, 'branchGap');
+  assertEqual(LAYOUT_CONFIG.arcRadius, 40, 'arcRadius');
+  assertEqual(LAYOUT_CONFIG.stackLoopGap, 36, 'stackLoopGap');
+});
+
 test('计算 sections 分组区域位置（换行布局）', function() {
   const network = {
     name: 'TestNet',

@@ -21,7 +21,13 @@ const LAYOUT_CONFIG = {
   startX: 63,            // 21 * 3
   startY: 81,            // 27 * 3 - 顶部边距
   bottomPadding: 6,      // 2 * 3 - 底部边距（不超过2px）
-  maxLayersPerRow: 6     // 每行最多放置的层数量
+  maxLayersPerRow: 6,    // 每行最多放置的层数量
+  // Block layout constants
+  blockPadding: 27,      // block 内边距
+  blockTitleGap: 18,     // block 标题与内容间距
+  branchGap: 27,         // 并行分支间距
+  arcRadius: 40,         // 跳线弧线半径
+  stackLoopGap: 36       // stack 循环间距
 };
 
 /**
