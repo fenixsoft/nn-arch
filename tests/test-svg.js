@@ -283,6 +283,39 @@ test('生成 parallel block SVG', function() {
   assertEqual(svg.includes('stroke-dasharray'), true, '包含虚线边框');
 });
 
+test('生成 parallel block 多层分支 SVG', function() {
+  // Inception 风格的多层分支
+  const blockLayout = {
+    name: 'Inception',
+    type: 'parallel',
+    x: 100,
+    y: 50,
+    width: 500,
+    height: 300,
+    titleY: 70,
+    layers: [
+      {id: 'branch1', name: '1x1', type: 'conv', x: 120, y: 90, width: 72, height: 42, data: {kernel: 1}},
+      {id: 'branch2_reduce', name: '3x3_reduce', type: 'conv', x: 120, y: 140, width: 72, height: 42, data: {kernel: 1}},
+      {id: 'branch2_conv', name: '3x3', type: 'conv', x: 220, y: 140, width: 72, height: 42, data: {kernel: 3}},
+      {id: 'branch3', name: 'pool+1x1', type: 'pool', x: 120, y: 190, width: 72, height: 42, data: {kernel: 3}}
+    ],
+    forkPoint: {x: 110, y: 150},
+    mergePoint: {x: 350, y: 150},
+    branchLayerGroups: [
+      [{id: 'branch1', name: '1x1', x: 120, y: 90, width: 72, height: 42}],
+      [{id: 'branch2_reduce', x: 120, y: 140, width: 72, height: 42}, {id: 'branch2_conv', x: 220, y: 140, width: 72, height: 42}],
+      [{id: 'branch3', x: 120, y: 190, width: 72, height: 42}]
+    ]
+  };
+
+  const svg = generateBlock(blockLayout);
+  assertEqual(svg.includes('Inception'), true, '包含 block 名称');
+  assertEqual(svg.includes('1x1'), true, '包含分支名称');
+  assertEqual(svg.includes('3x3'), true, '包含多层分支名称');
+  // 验证有路径连接（fork 和 merge）
+  assertEqual(svg.includes('path'), true, '包含连接路径');
+});
+
 test('生成 residual block SVG (arc style)', function() {
   const blockLayout = {
     name: 'ResBlock',

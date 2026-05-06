@@ -520,11 +520,12 @@ function calculateBlockLayout(block, startX, startY) {
 
 /**
  * 计算 parallel block 布局
- * 分支垂直堆叠
+ * 分支垂直堆叠，每个分支内部水平排列多层
  */
 function calculateParallelBlockLayout(block, layout, startX, startY) {
   const layerWidth = LAYOUT_CONFIG.layerWidth;
   const layerHeight = LAYOUT_CONFIG.layerHeight;
+  const layerGap = LAYOUT_CONFIG.layerGap;
   const branchGap = LAYOUT_CONFIG.branchGap;
   const padding = LAYOUT_CONFIG.blockPadding;
 
@@ -538,41 +539,82 @@ function calculateParallelBlockLayout(block, layout, startX, startY) {
   let currentY = startY + titleHeight;
   const contentStartX = startX + padding;
 
-  branches.forEach((branch, index) => {
-    layout.layers.push({
-      name: branch.name,
-      type: branch.type,
-      x: contentStartX,
-      y: currentY,
-      width: layerWidth,
-      height: layerHeight,
-      data: branch,
-      branchIndex: index
-    });
+  // 记录每个分支的层，用于计算 fork/merge
+  const branchLayerGroups = [];
+  let maxBranchWidth = layerWidth; // 最长的分支宽度
 
-    currentY += layerHeight + (index < branches.length - 1 ? branchGap : 0);
+  branches.forEach((branch, branchIndex) => {
+    const branchLayers = [];
+
+    // 判断是单层还是多层分支
+    if (Array.isArray(branch)) {
+      // 多层分支：水平排列
+      let currentX = contentStartX;
+      branch.forEach((layer, layerIndex) => {
+        const layerData = {
+          id: layer.id || `${block.name}_${branchIndex}_${layerIndex}`,
+          name: layer.name,
+          type: layer.type,
+          x: currentX,
+          y: currentY,
+          width: layerWidth,
+          height: layerHeight,
+          data: layer,
+          branchIndex: branchIndex
+        };
+        layout.layers.push(layerData);
+        branchLayers.push(layerData);
+        currentX += layerWidth + layerGap;
+      });
+
+      // 计算该分支的总宽度
+      const branchWidth = (branch.length - 1) * (layerWidth + layerGap) + layerWidth;
+      if (branchWidth > maxBranchWidth) {
+        maxBranchWidth = branchWidth;
+      }
+
+      currentY += layerHeight + (branchIndex < branches.length - 1 ? branchGap : 0);
+    } else {
+      // 单层分支
+      const layerData = {
+        id: branch.id || `${block.name}_${branchIndex}`,
+        name: branch.name,
+        type: branch.type,
+        x: contentStartX,
+        y: currentY,
+        width: layerWidth,
+        height: layerHeight,
+        data: branch,
+        branchIndex: branchIndex
+      };
+      layout.layers.push(layerData);
+      branchLayers.push(layerData);
+
+      currentY += layerHeight + (branchIndex < branches.length - 1 ? branchGap : 0);
+    }
+
+    branchLayerGroups.push(branchLayers);
   });
 
   // 计算容器尺寸
-  layout.width = layerWidth + padding * 2;
+  layout.width = maxBranchWidth + padding * 2;
   layout.height = currentY - startY + padding;
 
-  // 计算分支间的连接（如果有）
-  layout.connections = calculateConnections(layout.layers, 'vertical');
-
-  // 计算 fork 和 merge 点
-  const firstLayer = layout.layers[0];
-  const lastLayer = layout.layers[layout.layers.length - 1];
-
+  // 计算 fork 点：block 左侧中心
+  const contentHeight = currentY - startY - titleHeight - padding;
   layout.forkPoint = {
-    x: startX + padding + layerWidth / 2,
-    y: startY + titleHeight - branchGap / 2
+    x: startX + padding / 2,
+    y: startY + titleHeight + contentHeight / 2
   };
 
+  // 计算 merge 点：block 右侧中心（最长分支的末端）
   layout.mergePoint = {
-    x: startX + padding + layerWidth / 2,
-    y: lastLayer.y + layerHeight + branchGap / 2
+    x: startX + layout.width - padding / 2,
+    y: layout.forkPoint.y
   };
+
+  // 记录分支层组，用于 SVG 渲染时计算分叉/汇聚连线
+  layout.branchLayerGroups = branchLayerGroups;
 }
 
 /**

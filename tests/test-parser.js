@@ -572,3 +572,35 @@ test('Transformer 模板包含 expand 属性', function() {
   assertEqual(result.blocks.length, 1, 'Transformer blocks 数量');
   assertEqual(result.blocks[0].expand, false, 'expand 默认 false');
 });
+
+test('GoogLeNet 模板包含多层分支 Inception 模块', function() {
+  const googlenetYaml = getTemplate('googlenet');
+  const result = parseNetworkYaml(googlenetYaml);
+  assertEqual(result.blocks.length, 2, 'GoogLeNet Inception blocks 数量');
+
+  // 检查第一个 Inception 模块
+  const inception3a = result.blocks[0];
+  assertEqual(inception3a.type, 'parallel', 'Inception_3a 类型');
+  assertEqual(inception3a.branches.length, 4, 'Inception_3a 分支数量');
+
+  // 检查多层分支（分支2和分支3是数组）
+  assertEqual(Array.isArray(inception3a.branches[1]), true, '分支2 是多层（数组）');
+  assertEqual(inception3a.branches[1].length, 2, '分支2 有2层');
+  assertEqual(Array.isArray(inception3a.branches[2]), true, '分支3 是多层（数组）');
+  assertEqual(inception3a.branches[2].length, 2, '分支3 有2层');
+});
+
+test('Inception Module 模板解析正确', function() {
+  const inceptionYaml = getTemplate('inception_module');
+  const result = parseNetworkYaml(inceptionYaml);
+  assertEqual(result.blocks.length, 1, 'Inception Module blocks 数量');
+
+  const inception = result.blocks[0];
+  assertEqual(inception.branches.length, 4, 'Inception 4个分支');
+
+  // 检查每个分支
+  assertEqual(Array.isArray(inception.branches[0]), false, '分支1 单层');
+  assertEqual(Array.isArray(inception.branches[1]), true, '分支2 多层');
+  assertEqual(Array.isArray(inception.branches[2]), true, '分支3 多层');
+  assertEqual(Array.isArray(inception.branches[3]), true, '分支4 多层');
+});

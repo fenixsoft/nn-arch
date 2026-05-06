@@ -143,6 +143,99 @@ blocks:
 
 layers_after_blocks:
   - {id: output, name: Output, type: output, size: 10000}`
+  },
+
+  googlenet: {
+    name: 'GoogLeNet (Inception v1)',
+    template: `name: GoogLeNet
+layout: horizontal
+
+layers:
+  - {id: input, name: Input, type: input, size: "224x224x3"}
+  - {id: conv1, name: Conv1, type: conv, kernel: 7, stride: 2, channels: 64, out: "112x112x64", act: ReLU}
+  - {id: pool1, name: Pool1, type: pool, kernel: 3, stride: 2, out: "56x56x64"}
+
+blocks:
+  - name: Inception_3a
+    type: parallel
+    branches:
+      # 分支1: 1x1 conv
+      - {id: inc3a_1x1, name: "1x1 conv", type: conv, kernel: 1, channels: 64, act: ReLU}
+      # 分支2: 3x3 reduce + 3x3 conv
+      - [
+          {id: inc3a_3x3r, name: "3x3 reduce", type: conv, kernel: 1, channels: 96, act: ReLU},
+          {id: inc3a_3x3, name: "3x3 conv", type: conv, kernel: 3, channels: 128, act: ReLU}
+        ]
+      # 分支3: 5x5 reduce + 5x5 conv
+      - [
+          {id: inc3a_5x5r, name: "5x5 reduce", type: conv, kernel: 1, channels: 16, act: ReLU},
+          {id: inc3a_5x5, name: "5x5 conv", type: conv, kernel: 5, channels: 32, act: ReLU}
+        ]
+      # 分支4: pool + 1x1 conv
+      - [
+          {id: inc3a_pool, name: pool, type: pool, kernel: 3, stride: 1},
+          {id: inc3a_pool1x1, name: "pool+1x1", type: conv, kernel: 1, channels: 32, act: ReLU}
+        ]
+    merge: concat
+
+  - name: Inception_3b
+    type: parallel
+    branches:
+      - {id: inc3b_1x1, name: "1x1 conv", type: conv, kernel: 1, channels: 128, act: ReLU}
+      - [
+          {id: inc3b_3x3r, name: "3x3 reduce", type: conv, kernel: 1, channels: 128, act: ReLU},
+          {id: inc3b_3x3, name: "3x3 conv", type: conv, kernel: 3, channels: 192, act: ReLU}
+        ]
+      - [
+          {id: inc3b_5x5r, name: "5x5 reduce", type: conv, kernel: 1, channels: 32, act: ReLU},
+          {id: inc3b_5x5, name: "5x5 conv", type: conv, kernel: 5, channels: 96, act: ReLU}
+        ]
+      - [
+          {id: inc3b_pool, name: pool, type: pool, kernel: 3, stride: 1},
+          {id: inc3b_pool1x1, name: "pool+1x1", type: conv, kernel: 1, channels: 64, act: ReLU}
+        ]
+    merge: concat
+
+layers_after_blocks:
+  - {id: pool2, name: Pool2, type: pool, kernel: 3, stride: 2}
+  - {id: fc1, name: FC1, type: fc, size: 1024, act: ReLU, dropout: true}
+  - {id: fc2, name: FC2, type: fc, size: 1000}
+  - {id: output, name: Output, type: output, size: 1000, act: Softmax}`
+  },
+
+  inception_module: {
+    name: 'Inception Module',
+    template: `name: Inception Module
+layout: horizontal
+
+layers:
+  - {id: input, name: Input, type: input, size: "28x28x256"}
+
+blocks:
+  - name: Inception
+    type: parallel
+    branches:
+      # 1x1 conv 分支
+      - {id: branch_1x1, name: "1×1", type: conv, kernel: 1, channels: 64, act: ReLU}
+      # 3x3 conv 分支 (先 1x1 reduce)
+      - [
+          {id: branch_3x3_reduce, name: "1×1", type: conv, kernel: 1, channels: 96, act: ReLU},
+          {id: branch_3x3, name: "3×3", type: conv, kernel: 3, pad: 1, channels: 128, act: ReLU}
+        ]
+      # 5x5 conv 分支 (先 1x1 reduce)
+      - [
+          {id: branch_5x5_reduce, name: "1×1", type: conv, kernel: 1, channels: 16, act: ReLU},
+          {id: branch_5x5, name: "5×5", type: conv, kernel: 5, pad: 2, channels: 32, act: ReLU}
+        ]
+      # pool 分支
+      - [
+          {id: branch_pool, name: Pool, type: pool, kernel: 3, stride: 1, pad: 1},
+          {id: branch_pool_proj, name: "1×1", type: conv, kernel: 1, channels: 32, act: ReLU}
+        ]
+    merge: concat
+
+layers_after_blocks:
+  - {id: output, name: Output, type: output, size: "28x28x256"}`
   }
 };
 

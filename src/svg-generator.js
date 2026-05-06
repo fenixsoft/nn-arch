@@ -378,6 +378,7 @@ function generateBlock(block) {
 
 /**
  * 生成并行块的 fork/merge 连接线
+ * 支持多层分支：只连接每个分支的第一个层和最后一个层
  * @param {object} block - 块布局数据
  * @returns {string} SVG 字符串
  */
@@ -390,14 +391,41 @@ function generateParallelConnections(block) {
     return '';
   }
 
-  // 生成从 fork 点到每个分支的连接
-  block.layers.forEach(layer => {
-    const layerCenterY = layer.y + layer.height / 2;
-    // Fork 线：从 fork 点到层左侧
-    parts.push(`<path d="M${fork.x} ${fork.y} L${layer.x} ${layerCenterY}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
-    // Merge 线：从层右侧到 merge 点
-    parts.push(`<path d="M${layer.x + layer.width} ${layerCenterY} L${merge.x} ${merge.y}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
-  });
+  // 如果有 branchLayerGroups，使用它来确定每个分支的首尾层
+  if (block.branchLayerGroups && block.branchLayerGroups.length > 0) {
+    block.branchLayerGroups.forEach(branchLayers => {
+      if (branchLayers.length === 0) return;
+
+      const firstLayer = branchLayers[0];
+      const lastLayer = branchLayers[branchLayers.length - 1];
+
+      // Fork 线：从 fork 点到分支第一层左侧
+      const firstLayerCenterY = firstLayer.y + firstLayer.height / 2;
+      parts.push(`<path d="M${fork.x} ${fork.y} L${firstLayer.x} ${firstLayerCenterY}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+
+      // Merge 线：从分支最后一层右侧到 merge 点
+      const lastLayerCenterY = lastLayer.y + lastLayer.height / 2;
+      parts.push(`<path d="M${lastLayer.x + lastLayer.width} ${lastLayerCenterY} L${merge.x} ${merge.y}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+
+      // 分支内部连接：如果分支有多层，生成层间连接
+      for (let i = 0; i < branchLayers.length - 1; i++) {
+        const fromLayer = branchLayers[i];
+        const toLayer = branchLayers[i + 1];
+        const fromY = fromLayer.y + fromLayer.height / 2;
+        const toY = toLayer.y + toLayer.height / 2;
+        parts.push(`<path d="M${fromLayer.x + fromLayer.width} ${fromY} L${toLayer.x} ${toY}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+      }
+    });
+  } else {
+    // 旧格式：所有层都是独立分支
+    block.layers.forEach(layer => {
+      const layerCenterY = layer.y + layer.height / 2;
+      // Fork 线：从 fork 点到层左侧
+      parts.push(`<path d="M${fork.x} ${fork.y} L${layer.x} ${layerCenterY}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+      // Merge 线：从层右侧到 merge 点
+      parts.push(`<path d="M${layer.x + layer.width} ${layerCenterY} L${merge.x} ${merge.y}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+    });
+  }
 
   return parts.join('\n');
 }

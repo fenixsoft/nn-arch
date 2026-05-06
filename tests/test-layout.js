@@ -421,6 +421,44 @@ test('计算 parallel block 布局', function() {
   assertEqual(blockLayout.height > 0, true, '容器高度');
 });
 
+test('计算 parallel block 多层分支布局', function() {
+  // Inception 模块风格的测试：每个分支有多层
+  const block = {
+    name: 'Inception',
+    type: 'parallel',
+    branches: [
+      // 分支1: 单层 1x1 conv
+      {id: 'branch1', name: '1x1', type: 'conv', kernel: 1, channels: 64},
+      // 分支2: 两层 3x3 conv (reduce + conv)
+      [
+        {id: 'branch2_reduce', name: '3x3_reduce', type: 'conv', kernel: 1, channels: 96},
+        {id: 'branch2_conv', name: '3x3', type: 'conv', kernel: 3, channels: 128}
+      ],
+      // 分支3: 两层 5x5 conv (reduce + conv)
+      [
+        {id: 'branch3_reduce', name: '5x5_reduce', type: 'conv', kernel: 1, channels: 16},
+        {id: 'branch3_conv', name: '5x5', type: 'conv', kernel: 5, channels: 32}
+      ],
+      // 分支4: 单层 pool + 1x1 conv
+      {id: 'branch4', name: 'pool+1x1', type: 'pool', kernel: 3}
+    ],
+    merge: 'concat'
+  };
+
+  const blockLayout = calculateBlockLayout(block, 100, 50);
+  assertEqual(blockLayout.name, 'Inception', 'block name');
+  assertEqual(blockLayout.layers.length, 6, '总层数量（1 + 2 + 2 + 1）');
+  assertEqual(blockLayout.branchLayerGroups.length, 4, '分支组数量');
+
+  // 验证容器宽度覆盖最长分支（2层）
+  const twoLayerBranchWidth = 216 * 2 + 27; // layerWidth * 2 + layerGap
+  assertEqual(blockLayout.width > twoLayerBranchWidth, true, '容器宽度覆盖最长分支');
+
+  // 验证 fork 和 merge 点
+  assertEqual(blockLayout.forkPoint !== undefined, true, '有 fork 点');
+  assertEqual(blockLayout.mergePoint !== undefined, true, '有 merge 点');
+});
+
 test('计算 residual block arc 样式布局', function() {
   const block = {
     name: 'ResBlock',
