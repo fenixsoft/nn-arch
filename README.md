@@ -12,7 +12,7 @@
 - ✅ 支持复杂拓扑结构：残差块（Residual）、并行块（Parallel）、重复块（Stack）
 - ✅ 支持多种布局：水平、垂直、自动换行
 - ✅ 支持分组显示（Sections）
-- ✅ 预置模板：AlexNet、VGG16、ResNet18、Transformer
+- ✅ 预置模板：AlexNet、VGG16、ResNet18、Transformer、GoogLeNet、Inception Module
 - ✅ 纯前端实现，无需后端依赖
 - ✅ 支持外部 API 调用
 
@@ -117,7 +117,7 @@ layers:
 | `getTemplateYaml(key)` | 模板键名 | YAML 文本 | 获取模板 YAML |
 | `downloadSvg(svg, filename)` | SVG、文件名 | 无 | 下载 SVG 文件 |
 
-**可用模板：** `alexnet`, `vgg16`, `resnet18`, `transformer`
+**可用模板：** `alexnet`, `vgg16`, `resnet18`, `transformer`, `googlenet`, `inception_module`
 
 ## YAML 格式说明
 
@@ -169,7 +169,7 @@ layers:                          # 所有层定义
 | `style` | residual | 布局样式：`arc`（弧形）或 `parallel`（并行） |
 | `expand` | stack | 是否全部展开：`true` 显示每层，`false` 显示简化形式 |
 | `main` | residual | 主路径层列表 |
-| `branches` | parallel | 分支层列表（每个分支是一个层列表） |
+| `branches` | parallel | 分支层列表（单层对象或多层数组） |
 | `layers` | stack | 重复的层列表 |
 | `skip` | residual | 跳跃连接类型：`identity`（恒等）或 `projection`（投影） |
 | `merge` | residual, parallel | 合并方式：`add`（相加）或 `concat`（拼接） |
@@ -190,13 +190,36 @@ blocks:
     merge: add
     act: ReLU
 
-  # 并行块示例
+  # 并行块示例（单层分支）
   - name: MultiHead
     type: parallel
     branches:
       - {id: q, name: Q, type: fc, size: 64}
       - {id: k, name: K, type: fc, size: 64}
       - {id: v, name: V, type: fc, size: 64}
+    merge: concat
+
+  # Inception 模块示例（多层分支）
+  - name: Inception
+    type: parallel
+    branches:
+      # 分支1: 单层 1x1 conv
+      - {id: branch_1x1, name: "1×1", type: conv, kernel: 1, channels: 64}
+      # 分支2: 多层 3x3 reduce + conv
+      - [
+          {id: branch_3x3r, name: "3×3 reduce", type: conv, kernel: 1, channels: 96},
+          {id: branch_3x3, name: "3×3", type: conv, kernel: 3, channels: 128}
+        ]
+      # 分支3: 多层 5x5 reduce + conv
+      - [
+          {id: branch_5x5r, name: "5×5 reduce", type: conv, kernel: 1, channels: 16},
+          {id: branch_5x5, name: "5×5", type: conv, kernel: 5, channels: 32}
+        ]
+      # 分支4: 多层 pool + 1x1 conv
+      - [
+          {id: branch_pool, name: Pool, type: pool, kernel: 3},
+          {id: branch_pool_proj, name: "Pool+1×1", type: conv, kernel: 1, channels: 32}
+        ]
     merge: concat
 
   # 重复块示例
