@@ -30,6 +30,17 @@ const LAYOUT_CONFIG = {
   stackLoopGap: 36       // stack 循环间距
 };
 
+// Collapsed block 配置（最小尺寸方块）
+const COLLAPSED_CONFIG = {
+  layerWidth: 50,      // 最小方块宽度（vs 正常 216）
+  layerHeight: 30,     // 最小方块高度（vs 正常 126）
+  layerGap: 10,        // 最小方块间距（vs 正常 27）
+  blockPadding: 15,    // collapsed block 内边距（vs 正常 27）
+  titleGap: 10,        // 标题与内容间距（vs 正常 18）
+  branchGap: 12,       // 分支间距（vs 正常 27）
+  cornerRadius: 4.8    // 圆角半径（缩小以匹配小方块）
+};
+
 /**
  * 计算网络布局
  * @param {object} network - 解析后的网络定义
@@ -1339,6 +1350,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     calculateLayout,
     LAYOUT_CONFIG,
+    COLLAPSED_CONFIG,
     calculateBlockLayout
   };
 }
