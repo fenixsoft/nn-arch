@@ -1422,6 +1422,9 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
       const blockRightX = startX + layout.width;
       const blockCenterY = startY + layout.height / 2;
 
+      // 标题底部位置
+      const titleBottomY = startY + titleHeight;
+
       // 主路径层
       const mainLayersList = layout.layers.filter(l => l.path === 'main');
       const conv1 = mainLayersList[0];
@@ -1437,16 +1440,19 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
       const conv2CenterY = conv2.y + layerHeight / 2;
       const conv2RightX = conv2.x + layerWidth;
 
+      // Skip 折线的中间位置（标题底部和 Conv 上边框之间）
+      const skipLineY = (titleBottomY + conv1TopY) / 2;
+
       // 新的连接结构（折线方式）
       layout.residualConnections = {
-        // Skip connection：从 block 左边缘中心 → 向上折线到 Conv 上方 → 水平 → 向下到 block 右边缘中心
-        // 折线在标题下方、Conv 上方
+        // Skip connection：从 block 左边缘中心 → 向上折线到中间位置 → 水平 → 向下到 block 右边缘中心
+        // 折线位于标题下方、Conv 上方之间的中间位置
         skip: {
           type: 'polyline',
           points: [
             { x: blockLeftX, y: blockCenterY },  // 起点（左边缘中心）
-            { x: blockLeftX, y: conv1TopY },     // 向上到 Conv 顶部 y（标题下方、Conv 上方）
-            { x: blockRightX, y: conv1TopY },    // 水平到右边（Conv 上方）
+            { x: blockLeftX, y: skipLineY },     // 向上到中间位置（标题和 Conv 之间）
+            { x: blockRightX, y: skipLineY },    // 水平到右边
             { x: blockRightX, y: blockCenterY }  // 向下到右边缘中心
           ]
         },
