@@ -1198,13 +1198,16 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
  * expand=false：显示一次，带重复标记
  * expand=true：展开所有重复
  * vertical 方向：层垂直排列
+ * collapsed 模式：使用 COLLAPSED_CONFIG 的较小尺寸
  */
 function calculateStackBlockLayout(block, layout, startX, startY, direction = 'horizontal') {
-  const layerWidth = LAYOUT_CONFIG.layerWidth;
-  const layerHeight = LAYOUT_CONFIG.layerHeight;
-  const layerGap = LAYOUT_CONFIG.layerGap;
-  const padding = LAYOUT_CONFIG.blockPadding;
-  const stackLoopGap = LAYOUT_CONFIG.stackLoopGap;
+  // 选择配置：collapsed 模式使用 COLLAPSED_CONFIG
+  const config = layout.collapsed ? COLLAPSED_CONFIG : LAYOUT_CONFIG;
+  const layerWidth = config.layerWidth;
+  const layerHeight = config.layerHeight;
+  const layerGap = config.layerGap;
+  const padding = config.blockPadding;
+  const stackLoopGap = layout.collapsed ? COLLAPSED_CONFIG.layerGap : LAYOUT_CONFIG.stackLoopGap;
 
   const layers = block.layers || [];
   const repeat = block.repeat || 1;
@@ -1212,9 +1215,9 @@ function calculateStackBlockLayout(block, layout, startX, startY, direction = 'h
 
   if (layers.length === 0) return;
 
-  // 标题区域高度/宽度
-  const titleHeight = LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.blockTitleGap;
-  const titleWidth = LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.blockTitleGap;
+  // 标题区域高度/宽度（使用 collapsed-aware gap）
+  const titleHeight = LAYOUT_CONFIG.fontSizeSection + (layout.collapsed ? COLLAPSED_CONFIG.titleGap : LAYOUT_CONFIG.blockTitleGap);
+  const titleWidth = LAYOUT_CONFIG.fontSizeSection + (layout.collapsed ? COLLAPSED_CONFIG.titleGap : LAYOUT_CONFIG.blockTitleGap);
 
   if (direction === 'vertical') {
     // 垂直布局
@@ -1236,7 +1239,8 @@ function calculateStackBlockLayout(block, layout, startX, startY, direction = 'h
             width: layerWidth,
             height: layerHeight,
             data: layer,
-            repeatIndex: r
+            repeatIndex: r,
+            collapsed: layout.collapsed
           });
           currentY += layerHeight + layerGap;
         });
@@ -1265,7 +1269,8 @@ function calculateStackBlockLayout(block, layout, startX, startY, direction = 'h
           y: currentY,
           width: layerWidth,
           height: layerHeight,
-          data: layer
+          data: layer,
+          collapsed: layout.collapsed
         });
         currentY += layerHeight + layerGap;
       });
@@ -1304,7 +1309,8 @@ function calculateStackBlockLayout(block, layout, startX, startY, direction = 'h
             width: layerWidth,
             height: layerHeight,
             data: layer,
-            repeatIndex: r
+            repeatIndex: r,
+            collapsed: layout.collapsed
           });
           currentX += layerWidth + layerGap;
         });
@@ -1333,7 +1339,8 @@ function calculateStackBlockLayout(block, layout, startX, startY, direction = 'h
           y: contentStartY,
           width: layerWidth,
           height: layerHeight,
-          data: layer
+          data: layer,
+          collapsed: layout.collapsed
         });
         currentX += layerWidth + layerGap;
       });
