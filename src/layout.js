@@ -32,9 +32,10 @@ const LAYOUT_CONFIG = {
 
 // Collapsed block 配置（最小尺寸方块）
 const COLLAPSED_CONFIG = {
-  // 层尺寸：vertical 布局使用最小尺寸，horizontal 布局使用正常宽度
+  // 层尺寸：vertical 布局使用最小尺寸，horizontal 布局也使用最小尺寸以使block整体宽度紧凑
   layerWidth: 50,           // vertical 布局最小方块宽度
-  horizontalLayerWidth: 216, // horizontal 布局与正常层宽度一致
+  horizontalLayerWidth: 50, // horizontal 布局也使用最小宽度，使collapsed block整体宽度紧凑
+  horizontalBlockWidth: 216, // horizontal 布局下collapsed block的整体宽度（与普通层一致）
   layerHeight: 30,          // 最小方块高度（vs 正常 126）
   layerGap: 10,             // 最小方块间距（vs 正常 27）
   blockPadding: 15,         // collapsed block 内边距（vs 正常 27）
@@ -215,6 +216,9 @@ function calculateSectionsLayout(network, layout) {
   // 计算标题位置
   layout.title.y = LAYOUT_CONFIG.fontSizeTitle + LAYOUT_CONFIG.titleGap;
 
+  // 记录每个section内的元素顺序（用于计算连接）
+  const sectionElementOrders = [];
+
   // 按 sections 分行
   network.sections.forEach((section, sectionIndex) => {
     const sectionLayerIds = section.layers;
@@ -227,6 +231,8 @@ function calculateSectionsLayout(network, layout) {
     // 记录该 section 的层和 blocks
     const sectionLayers = [];
     const sectionBlocks = [];
+    // 记录该section内的元素顺序（名称）
+    const elementOrder = [];
     let layerStartY = sectionTitleY + LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.sectionTitleGap;
     let currentX = rowStartX;
     let rowCount = 0;
@@ -244,6 +250,7 @@ function calculateSectionsLayout(network, layout) {
         const blockLayout = calculateBlockLayout(blockData, currentX, layerStartY, 'horizontal');
         layout.blocks.push(blockLayout);
         sectionBlocks.push(blockLayout);
+        elementOrder.push({ name: blockLayout.name, type: 'block', layout: blockLayout });
 
         // 将 block 内部层添加到全局 layers 数组
         blockLayout.layers.forEach(layer => {
@@ -289,11 +296,15 @@ function calculateSectionsLayout(network, layout) {
           };
           layout.layers.push(layer);
           sectionLayers.push(layer);
+          elementOrder.push({ name: layer.name, type: 'layer', layout: layer });
           currentX += layerWidth + LAYOUT_CONFIG.layerGap;
           elementCount++;
         }
       }
     });
+
+    // 保存该section的元素顺序
+    sectionElementOrders[sectionIndex] = elementOrder;
 
     // 计算 section 框位置（可能包含多行）
     const allElements = [...sectionLayers, ...sectionBlocks];
@@ -319,41 +330,100 @@ function calculateSectionsLayout(network, layout) {
     }
   });
 
-  // 计算各 section 内的连接
+  // 计算各 section 内的连接（普通层之间）
   layout.connections = calculateConnections(layout.layers);
 
-  // 计算 section 内换行的折线连接
+  // 计算 section 内元素之间的连接（包括 blocks）
+  // 根据元素顺序数组计算相邻元素之间的连接
+  layout.sectionInternalConnections = [];
+  sectionElementOrders.forEach((elementOrder, sectionIndex) => {
+    if (elementOrder.length < 2) return;
+
+    // 找到同一行内的相邻元素，计算连接
+    // 首先按行分组元素（使用y坐标判断）
+    const rows = {};
+    elementOrder.forEach(el => {
+      const rowKey = Math.round(el.layout.y); // 使用整数y坐标作为行key
+      if (!rows[rowKey]) rows[rowKey] = [];
+      rows[rowKey].push(el);
+    });
+
+    // 对每行内的元素按x坐标排序，然后计算相邻连接
+    Object.keys(rows).sort((a, b) => parseFloat(a) - parseFloat(b)).forEach(rowY => {
+      const rowElements = rows[rowY].sort((a, b) => a.layout.x - b.layout.x);
+
+      for (let i = 0; i < rowElements.length - 1; i++) {
+        const fromEl = rowElements[i];
+        const toEl = rowElements[i + 1];
+
+        // 计算连接坐标
+        // 对于block：从block右侧中心到下一个元素左侧中心
+        // 对于layer：从层右侧中心到下一个元素左侧中心
+        const fromX = fromEl.layout.x + fromEl.layout.width;
+        const fromY = fromEl.type === 'block'
+          ? fromEl.layout.y + fromEl.layout.height / 2
+          : fromEl.layout.y + fromEl.layout.height / 2;
+        const toX = toEl.layout.x;
+        const toY = toEl.type === 'block'
+          ? toEl.layout.y + toEl.layout.height / 2
+          : toEl.layout.y + toEl.layout.height / 2;
+
+        layout.sectionInternalConnections.push({
+          from: fromEl.name,
+          to: toEl.name,
+          x1: fromX,
+          y1: fromY,
+          x2: toX,
+          y2: toY,
+          type: 'section-internal',
+          sectionIndex: sectionIndex
+        });
+      }
+    });
+  });
+
+  // 计算 section 内换行的折线连接（使用elementOrder判断行边界）
   layout.sectionRowConnections = [];
-  layout.sections.forEach((section, sectionIndex) => {
-    const sectionLayers = layout.layers.filter(l => l.sectionIndex === sectionIndex);
-    if (section.rowCount > 1) {
-      // 有多行，需要计算行间连接
-      for (let row = 0; row < section.rowCount - 1; row++) {
-        const rowLayers = sectionLayers.filter(l => l.rowIndex === row);
-        const nextRowLayers = sectionLayers.filter(l => l.rowIndex === row + 1);
+  sectionElementOrders.forEach((elementOrder, sectionIndex) => {
+    if (elementOrder.length < 2) return;
 
-        if (rowLayers.length > 0 && nextRowLayers.length > 0) {
-          const fromLayer = rowLayers[rowLayers.length - 1]; // 当前行最后一个
-          const toLayer = nextRowLayers[0]; // 下一行第一个
+    // 按行分组元素
+    const rows = {};
+    elementOrder.forEach(el => {
+      const rowKey = Math.round(el.layout.y);
+      if (!rows[rowKey]) rows[rowKey] = [];
+      rows[rowKey].push(el);
+    });
 
-          // 折线连接：从当前行最后元素底部 -> 中间 -> 下一行第一个元素顶部
-          const fromX = fromLayer.x + fromLayer.width / 2;
-          const fromY = fromLayer.y + fromLayer.height;
-          const toX = toLayer.x + toLayer.width / 2;
-          const toY = toLayer.y;
-          const midY = fromY + (toY - fromY) / 2;
+    const rowKeys = Object.keys(rows).sort((a, b) => parseFloat(a) - parseFloat(b));
+    if (rowKeys.length <= 1) return; // 只有单行
 
-          layout.sectionRowConnections.push({
-            from: fromLayer.name,
-            to: toLayer.name,
-            fromX: fromX,
-            fromY: fromY,
-            midY: midY,
-            toX: toX,
-            toY: toY,
-            sectionIndex: sectionIndex
-          });
-        }
+    // 对每行元素按x排序，找出每行的最后一个和下一行的第一个
+    for (let r = 0; r < rowKeys.length - 1; r++) {
+      const currentRowElements = rows[rowKeys[r]].sort((a, b) => a.layout.x - b.layout.x);
+      const nextRowElements = rows[rowKeys[r + 1]].sort((a, b) => a.layout.x - b.layout.x);
+
+      if (currentRowElements.length > 0 && nextRowElements.length > 0) {
+        const fromEl = currentRowElements[currentRowElements.length - 1]; // 当前行最后一个
+        const toEl = nextRowElements[0]; // 下一行第一个
+
+        // 折线连接：从当前行最后元素底部 -> 中间 -> 下一行第一个元素顶部
+        const fromX = fromEl.layout.x + fromEl.layout.width / 2;
+        const fromY = fromEl.layout.y + fromEl.layout.height;
+        const toX = toEl.layout.x + toEl.layout.width / 2;
+        const toY = toEl.layout.y;
+        const midY = fromY + (toY - fromY) / 2;
+
+        layout.sectionRowConnections.push({
+          from: fromEl.name,
+          to: toEl.name,
+          fromX: fromX,
+          fromY: fromY,
+          midY: midY,
+          toX: toX,
+          toY: toY,
+          sectionIndex: sectionIndex
+        });
       }
     }
   });
@@ -998,7 +1068,12 @@ function calculateParallelBlockLayout(block, layout, startX, startY, direction =
     });
 
     // 计算容器尺寸
-    layout.width = maxBranchWidth + padding * 2;
+    // horizontal 布局下 collapsed block 整体宽度固定为 216（与普通层一致）
+    if (layout.collapsed && direction === 'horizontal') {
+      layout.width = COLLAPSED_CONFIG.horizontalBlockWidth;
+    } else {
+      layout.width = maxBranchWidth + padding * 2;
+    }
     layout.height = currentY - startY + padding;
 
     // 计算 fork 点：block 左侧中心

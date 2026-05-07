@@ -105,6 +105,13 @@ function generateSvg(layout) {
     svgParts.push(generateConnection(conn));
   });
 
+  // section 内元素之间的连接（包括 blocks）
+  if (layout.sectionInternalConnections && layout.sectionInternalConnections.length > 0) {
+    layout.sectionInternalConnections.forEach(conn => {
+      svgParts.push(generateSectionInternalConnection(conn));
+    });
+  }
+
   // block 连接（入口/出口）
   if (layout.blockConnections && layout.blockConnections.length > 0) {
     layout.blockConnections.forEach(conn => {
@@ -323,6 +330,15 @@ function generateRowConnection(conn) {
   }
 
   return path;
+}
+
+/**
+ * 生成 section 内元素之间的连接（包括 blocks）
+ * 水平布局：直线连接
+ */
+function generateSectionInternalConnection(conn) {
+  // section 内相邻元素的直线连接
+  return `<path d="M${conn.x1} ${conn.y1} L${conn.x2} ${conn.y2}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`;
 }
 
 /**
@@ -630,6 +646,7 @@ if (typeof module !== 'undefined' && module.exports) {
     generateConnection,
     generateRowConnection,
     generateSectionRowConnection,
+    generateSectionInternalConnection,
     generateBlockConnection,
     generateErrorSvg,
     generateBlock,
