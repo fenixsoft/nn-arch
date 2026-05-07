@@ -499,7 +499,29 @@ test('计算 residual block parallel 样式布局', function() {
   assertEqual(blockLayout.name, 'ResBlock', 'block name');
   assertEqual(blockLayout.type, 'residual', 'block type');
   assertEqual(blockLayout.layers.length >= 2, true, '主路径层数量');
-  assertEqual(blockLayout.skipConnection.type, 'parallel', 'skip connection type');
+  // 当有 skip 层时，skip connection type 为 parallel-with-layers
+  assertEqual(blockLayout.skipConnection.type, 'parallel-with-layers', 'skip connection type (with skip layers)');
+});
+
+test('计算 residual block parallel 样式布局 - identity shortcut', function() {
+  // 测试 identity shortcut（无 skip 层，skip: identity）
+  const block = {
+    name: 'ResBlock',
+    type: 'residual',
+    style: 'parallel',
+    main: [
+      {name: 'conv1', type: 'conv', kernel: 3, channels: 64},
+      {name: 'conv2', type: 'conv', kernel: 3, channels: 64}
+    ],
+    skip: 'identity',
+    merge: 'add'
+  };
+
+  const blockLayout = calculateBlockLayout(block, 100, 50);
+  assertEqual(blockLayout.name, 'ResBlock', 'block name');
+  assertEqual(blockLayout.layers.length, 2, '主路径层数量（只有 main 层）');
+  // 当 skip 为 identity 时，skip connection type 为 parallel（无 skip 层）
+  assertEqual(blockLayout.skipConnection.type, 'parallel', 'skip connection type (identity shortcut)');
 });
 
 test('计算 residual block parallel 样式布局 - skip路径更长', function() {

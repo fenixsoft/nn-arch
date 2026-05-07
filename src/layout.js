@@ -1305,22 +1305,44 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
       const maxEndX = Math.max(mainEndX, skipEndX);
       layout.width = maxEndX + padding - startX;
 
-      // 高度计算：与 arc 样式保持一致
-      layout.height = titleHeight + arcRadius + layerHeight + padding;
+      // 高度计算：如果有 skip 层，需要包含它们的高度
+      if (hasSkipLayers) {
+        layout.height = titleHeight + arcRadius + layerHeight + config.branchGap + layerHeight + padding;
+      } else {
+        layout.height = titleHeight + arcRadius + layerHeight + padding;
+      }
 
       // 主路径连接
       layout.connections = calculateConnections(
         layout.layers.filter(l => l.path === 'main')
       );
 
-      // skip connection（parallel 样式）- 在预留的 arcRadius 空间绘制
-      layout.skipConnection = {
-        type: 'parallel',
-        startX: mainStartX,
-        endX: maxEndX,
-        startY: startY + titleHeight,
-        endY: mainStartY + layerHeight
-      };
+      // skip connection（parallel 样式）
+      // 如果有 skip 层，连接线从 block 入口到 skip 层入口，再从 skip 层出口到 block 出口
+      if (hasSkipLayers) {
+        const skipLayer = layout.layers.find(l => l.path === 'skip');
+        const lastSkipLayer = [...layout.layers].reverse().find(l => l.path === 'skip');
+        const firstMainLayer = layout.layers.find(l => l.path === 'main');
+        const lastMainLayer = [...layout.layers].reverse().find(l => l.path === 'main');
+
+        layout.skipConnection = {
+          type: 'parallel-with-layers',
+          startX: mainStartX,
+          startY: startY + titleHeight,
+          skipLayerStartY: skipLayer.y,
+          skipLayerEndY: lastSkipLayer.y + layerHeight,
+          endX: maxEndX,
+          endY: lastMainLayer.y + layerHeight / 2
+        };
+      } else {
+        layout.skipConnection = {
+          type: 'parallel',
+          startX: mainStartX,
+          endX: maxEndX,
+          startY: startY + titleHeight,
+          endY: mainStartY + layerHeight
+        };
+      }
 
     } else {
       // arc 样式（默认）：主路径水平，skip 弧线在上
