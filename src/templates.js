@@ -243,6 +243,14 @@ layers_after_blocks:
     template: `name: GoogLeNet (Collapsed)
 layout: vertical
 
+sections:
+  - name: 初始特征提取
+    layers: [input, conv1, pool1, conv2, pool2]
+  - name: Inception 堆叠
+    layers: [Inception_3a, Inception_3b, pool3, Inception_4a, Inception_4b, Inception_4c, Inception_4d, Inception_4e, pool4, Inception_5a, Inception_5b]
+  - name: 分类输出
+    layers: [pool5, fc1, fc2, output]
+
 layers:
   - {id: input, name: Input, type: input, size: "224x224x3"}
   - {id: conv1, name: Conv1, type: conv, kernel: 7, stride: 2, channels: 64, out: "112x112x64", act: ReLU}

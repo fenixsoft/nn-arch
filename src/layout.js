@@ -32,13 +32,20 @@ const LAYOUT_CONFIG = {
 
 // Collapsed block 配置（最小尺寸方块）
 const COLLAPSED_CONFIG = {
-  layerWidth: 50,      // 最小方块宽度（vs 正常 216）
-  layerHeight: 30,     // 最小方块高度（vs 正常 126）
-  layerGap: 10,        // 最小方块间距（vs 正常 27）
-  blockPadding: 15,    // collapsed block 内边距（vs 正常 27）
-  titleGap: 10,        // 标题与内容间距（vs 正常 18）
-  branchGap: 12,       // 分支间距（vs 正常 27）
-  cornerRadius: 4.8    // 圆角半径（缩小以匹配小方块）
+  // 层尺寸：vertical 布局使用最小尺寸，horizontal 布局使用正常宽度
+  layerWidth: 50,           // vertical 布局最小方块宽度
+  horizontalLayerWidth: 216, // horizontal 布局与正常层宽度一致
+  layerHeight: 30,          // 最小方块高度（vs 正常 126）
+  layerGap: 10,             // 最小方块间距（vs 正常 27）
+  blockPadding: 15,         // collapsed block 内边距（vs 正常 27）
+  titleGap: 15,             // 标题与内容间距（增加到 15 避免遮挡）
+  branchGap: 12,            // 分支间距（vs 正常 27）
+  cornerRadius: 4.8,        // 圆角半径（缩小以匹配小方块）
+  // 线条和箭头配置（更细更小）
+  strokeWidth: 1.8,         // 边框宽度（正常 3.6 的 50%）
+  arrowWidth: 1.35,         // 连线宽度（正常 2.7 的 50%）
+  arrowMarkerWidth: 3.6,    // 箭头宽度（正常 7.2 的 50%）
+  arrowMarkerHeight: 2.7    // 箭头高度（正常 5.4 的 50%）
 };
 // 浏览器环境：将 COLLAPSED_CONFIG 添加到全局作用域
 if (typeof globalThis !== 'undefined') {
@@ -760,7 +767,10 @@ function calculateBlockLayout(block, startX, startY, direction = 'horizontal') {
 function calculateParallelBlockLayout(block, layout, startX, startY, direction = 'horizontal') {
   // 根据折叠状态选择配置
   const config = layout.collapsed ? COLLAPSED_CONFIG : LAYOUT_CONFIG;
-  const layerWidth = config.layerWidth;
+  // horizontal 布局使用正常宽度，vertical 布局使用最小宽度
+  const layerWidth = layout.collapsed && direction === 'vertical'
+    ? COLLAPSED_CONFIG.layerWidth
+    : (layout.collapsed ? COLLAPSED_CONFIG.horizontalLayerWidth : LAYOUT_CONFIG.layerWidth);
   const layerHeight = config.layerHeight;
   const layerGap = config.layerGap;
   const branchGap = config.branchGap;
@@ -945,7 +955,10 @@ function calculateParallelBlockLayout(block, layout, startX, startY, direction =
 function calculateResidualBlockLayout(block, layout, startX, startY, direction = 'horizontal') {
   // Select config based on collapsed mode
   const config = layout.collapsed ? COLLAPSED_CONFIG : LAYOUT_CONFIG;
-  const layerWidth = config.layerWidth;
+  // horizontal 布局使用正常宽度，vertical 布局使用最小宽度
+  const layerWidth = layout.collapsed && direction === 'vertical'
+    ? COLLAPSED_CONFIG.layerWidth
+    : (layout.collapsed ? COLLAPSED_CONFIG.horizontalLayerWidth : LAYOUT_CONFIG.layerWidth);
   const layerHeight = config.layerHeight;
   const layerGap = config.layerGap;
   const padding = config.blockPadding;
@@ -1213,7 +1226,10 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
 function calculateStackBlockLayout(block, layout, startX, startY, direction = 'horizontal') {
   // 选择配置：collapsed 模式使用 COLLAPSED_CONFIG
   const config = layout.collapsed ? COLLAPSED_CONFIG : LAYOUT_CONFIG;
-  const layerWidth = config.layerWidth;
+  // horizontal 布局使用正常宽度，vertical 布局使用最小宽度
+  const layerWidth = layout.collapsed && direction === 'vertical'
+    ? COLLAPSED_CONFIG.layerWidth
+    : (layout.collapsed ? COLLAPSED_CONFIG.horizontalLayerWidth : LAYOUT_CONFIG.layerWidth);
   const layerHeight = config.layerHeight;
   const layerGap = config.layerGap;
   const padding = config.blockPadding;

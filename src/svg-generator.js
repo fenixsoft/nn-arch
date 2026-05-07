@@ -139,6 +139,9 @@ function generateDefs() {
     <marker id="arrowhead" markerWidth="${SVG_CONFIG.arrowMarkerWidth}" markerHeight="${SVG_CONFIG.arrowMarkerHeight}" refX="${SVG_CONFIG.arrowRefX}" refY="${SVG_CONFIG.arrowRefY}" orient="auto">
       <polygon points="0 0, ${SVG_CONFIG.arrowMarkerWidth} ${SVG_CONFIG.arrowRefY}, 0 ${SVG_CONFIG.arrowMarkerHeight}" fill="#999"/>
     </marker>
+    <marker id="arrowhead-collapsed" markerWidth="${globalThis.COLLAPSED_CONFIG?.arrowMarkerWidth || 3.6}" markerHeight="${globalThis.COLLAPSED_CONFIG?.arrowMarkerHeight || 2.7}" refX="${(globalThis.COLLAPSED_CONFIG?.arrowMarkerWidth || 3.6) * 0.875}" refY="${(globalThis.COLLAPSED_CONFIG?.arrowMarkerHeight || 2.7) / 2}" orient="auto">
+      <polygon points="0 0, ${globalThis.COLLAPSED_CONFIG?.arrowMarkerWidth || 3.6} ${(globalThis.COLLAPSED_CONFIG?.arrowMarkerHeight || 2.7) / 2}, 0 ${globalThis.COLLAPSED_CONFIG?.arrowMarkerHeight || 2.7}" fill="#999"/>
+    </marker>
   </defs>`;
 }
 
@@ -186,11 +189,13 @@ ${content}`;
  */
 function generateCollapsedLayer(layer) {
   const colors = COLORS[layer.type] || COLORS.input;
-  const cornerRadius = (globalThis.COLLAPSED_CONFIG && globalThis.COLLAPSED_CONFIG.cornerRadius) || 4.8;
+  const config = globalThis.COLLAPSED_CONFIG || {};
+  const cornerRadius = config.cornerRadius || 4.8;
+  const strokeWidth = config.strokeWidth || SVG_CONFIG.strokeWidth;
 
-  // Minimal rectangle without any text
+  // Minimal rectangle without any text, with thinner stroke
   return `
-	<rect x="${layer.x}" y="${layer.y}" width="${layer.width}" height="${layer.height}" fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="${SVG_CONFIG.strokeWidth}" rx="${cornerRadius}"/>`;
+	<rect x="${layer.x}" y="${layer.y}" width="${layer.width}" height="${layer.height}" fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="${strokeWidth}" rx="${cornerRadius}"/>`;
 }
 
 /**
@@ -391,9 +396,13 @@ function generateBlock(block) {
   const parts = [];
   const colors = COLORS[`block_${block.type}`] || COLORS.block_residual;
   const centerX = block.x + block.width / 2;
+  const collapsedConfig = globalThis.COLLAPSED_CONFIG || {};
+  const isCollapsed = block.layers && block.layers.some(l => l.collapsed);
+  const strokeWidth = isCollapsed ? (collapsedConfig.strokeWidth || SVG_CONFIG.strokeWidth) : SVG_CONFIG.strokeWidth;
+  const cornerRadius = isCollapsed ? (collapsedConfig.cornerRadius || SVG_CONFIG.cornerRadius) : SVG_CONFIG.cornerRadius;
 
-  // 容器矩形（虚线边框）
-  parts.push(`<rect x="${block.x}" y="${block.y}" width="${block.width}" height="${block.height}" fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="${SVG_CONFIG.strokeWidth}" stroke-dasharray="${9},${9}" rx="${SVG_CONFIG.cornerRadius}"/>`);
+  // 容器矩形（虚线边框）- collapsed 使用更细的边框
+  parts.push(`<rect x="${block.x}" y="${block.y}" width="${block.width}" height="${block.height}" fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="${strokeWidth}" stroke-dasharray="${9},${9}" rx="${cornerRadius}"/>`);
 
   // 标题（block 名称或带重复标记）
   // 显示 ×N 当：expand !== true (即 false、collapsed 或 undefined/默认值) 且 repeat > 1
@@ -439,6 +448,10 @@ function generateParallelConnections(block) {
   const fork = block.forkPoint;
   const merge = block.mergePoint;
   const direction = block.direction || 'horizontal';
+  const collapsedConfig = globalThis.COLLAPSED_CONFIG || {};
+  const isCollapsed = block.layers && block.layers.some(l => l.collapsed);
+  const arrowWidth = isCollapsed ? (collapsedConfig.arrowWidth || SVG_CONFIG.arrowWidth) : SVG_CONFIG.arrowWidth;
+  const arrowMarker = isCollapsed ? 'arrowhead-collapsed' : 'arrowhead';
 
   if (!fork || !merge || !block.layers || block.layers.length === 0) {
     return '';
@@ -451,10 +464,10 @@ function generateParallelConnections(block) {
       // Fork: 从fork点向下 -> 水平分叉 -> 向下到各分支顶部
       // 需要一个分叉点，位于标题下方、第一层上方之间的区域
       const firstLayer = block.branchLayerGroups[0][0];
-      const forkSplitY = fork.y + SVG_CONFIG.arrowWidth * 2; // fork点稍微向下作为分叉点
+      const forkSplitY = fork.y + arrowWidth * 2; // fork点稍微向下作为分叉点
 
       // 绘制主fork线（从fork点到分叉点）
-      parts.push(`<path d="M${fork.x} ${fork.y} L${fork.x} ${forkSplitY}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none"/>`);
+      parts.push(`<path d="M${fork.x} ${fork.y} L${fork.x} ${forkSplitY}" stroke="#999" stroke-width="${arrowWidth}" fill="none"/>`);
 
       // 从分叉点水平分叉到各分支，再向下到分支顶部
       block.branchLayerGroups.forEach(branchLayers => {
@@ -463,23 +476,23 @@ function generateParallelConnections(block) {
         const firstLayerCenterX = firstLayer.x + firstLayer.width / 2;
 
         // 从分叉点水平到分支中心，然后向下到分支顶部（箭头）
-        parts.push(`<path d="M${fork.x} ${forkSplitY} L${firstLayerCenterX} ${forkSplitY} L${firstLayerCenterX} ${firstLayer.y}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+        parts.push(`<path d="M${fork.x} ${forkSplitY} L${firstLayerCenterX} ${forkSplitY} L${firstLayerCenterX} ${firstLayer.y}" stroke="#999" stroke-width="${arrowWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
 
         // 分支内部连接
         for (let i = 0; i < branchLayers.length - 1; i++) {
           const fromLayer = branchLayers[i];
           const toLayer = branchLayers[i + 1];
           const fromX = fromLayer.x + fromLayer.width / 2;
-          parts.push(`<path d="M${fromX} ${fromLayer.y + fromLayer.height} L${fromX} ${toLayer.y}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+          parts.push(`<path d="M${fromX} ${fromLayer.y + fromLayer.height} L${fromX} ${toLayer.y}" stroke="#999" stroke-width="${arrowWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
         }
 
         // Merge: 从分支底部向下 -> 水平汇聚 -> 向下到merge点
         const lastLayer = branchLayers[branchLayers.length - 1];
         const lastLayerCenterX = lastLayer.x + lastLayer.width / 2;
-        const mergeSplitY = merge.y - SVG_CONFIG.arrowWidth * 2; // merge点稍微向上作为汇聚点
+        const mergeSplitY = merge.y - arrowWidth * 2; // merge点稍微向上作为汇聚点
 
         // 从分支底部向下到汇聚点水平线，然后水平到中心，然后向下到merge点
-        parts.push(`<path d="M${lastLayerCenterX} ${lastLayer.y + lastLayer.height} L${lastLayerCenterX} ${mergeSplitY} L${merge.x} ${mergeSplitY} L${merge.x} ${merge.y}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+        parts.push(`<path d="M${lastLayerCenterX} ${lastLayer.y + lastLayer.height} L${lastLayerCenterX} ${mergeSplitY} L${merge.x} ${mergeSplitY} L${merge.x} ${merge.y}" stroke="#999" stroke-width="${arrowWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
       });
 
     } else {
@@ -488,10 +501,10 @@ function generateParallelConnections(block) {
       const firstLayers = block.branchLayerGroups.map(bg => bg[0]);
       const minY = Math.min(...firstLayers.map(l => l.y));
       const maxY = Math.max(...firstLayers.map(l => l.y + l.height));
-      const forkSplitX = fork.x + SVG_CONFIG.arrowWidth * 2; // fork点稍微向右作为分叉点
+      const forkSplitX = fork.x + arrowWidth * 2; // fork点稍微向右作为分叉点
 
       // 绘制主fork线（从fork点到分叉点）
-      parts.push(`<path d="M${fork.x} ${fork.y} L${forkSplitX} ${fork.y}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none"/>`);
+      parts.push(`<path d="M${fork.x} ${fork.y} L${forkSplitX} ${fork.y}" stroke="#999" stroke-width="${arrowWidth}" fill="none"/>`);
 
       block.branchLayerGroups.forEach(branchLayers => {
         if (branchLayers.length === 0) return;
@@ -500,21 +513,21 @@ function generateParallelConnections(block) {
         const firstLayerCenterY = firstLayer.y + firstLayer.height / 2;
 
         // 从分叉点向下/上到分支中心，然后向右到分支左侧（箭头）
-        parts.push(`<path d="M${forkSplitX} ${fork.y} L${forkSplitX} ${firstLayerCenterY} L${firstLayer.x} ${firstLayerCenterY}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+        parts.push(`<path d="M${forkSplitX} ${fork.y} L${forkSplitX} ${firstLayerCenterY} L${firstLayer.x} ${firstLayerCenterY}" stroke="#999" stroke-width="${arrowWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
 
         // 分支内部连接
         for (let i = 0; i < branchLayers.length - 1; i++) {
           const fromLayer = branchLayers[i];
           const toLayer = branchLayers[i + 1];
           const fromY = fromLayer.y + fromLayer.height / 2;
-          parts.push(`<path d="M${fromLayer.x + fromLayer.width} ${fromY} L${toLayer.x} ${fromY}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+          parts.push(`<path d="M${fromLayer.x + fromLayer.width} ${fromY} L${toLayer.x} ${fromY}" stroke="#999" stroke-width="${arrowWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
         }
 
         // Merge: 从分支右侧 -> 水平汇聚 -> 向右到merge点
         const lastLayerCenterY = lastLayer.y + lastLayer.height / 2;
-        const mergeSplitX = merge.x - SVG_CONFIG.arrowWidth * 2;
+        const mergeSplitX = merge.x - arrowWidth * 2;
 
-        parts.push(`<path d="M${lastLayer.x + lastLayer.width} ${lastLayerCenterY} L${mergeSplitX} ${lastLayerCenterY} L${mergeSplitX} ${merge.y} L${merge.x} ${merge.y}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+        parts.push(`<path d="M${lastLayer.x + lastLayer.width} ${lastLayerCenterY} L${mergeSplitX} ${lastLayerCenterY} L${mergeSplitX} ${merge.y} L${merge.x} ${merge.y}" stroke="#999" stroke-width="${arrowWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
       });
     }
   } else {
@@ -523,17 +536,17 @@ function generateParallelConnections(block) {
       block.layers.forEach(layer => {
         const layerCenterX = layer.x + layer.width / 2;
         // Fork 线：折线连接
-        parts.push(`<path d="M${fork.x} ${fork.y} L${fork.x} ${fork.y + 10} L${layerCenterX} ${fork.y + 10} L${layerCenterX} ${layer.y}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+        parts.push(`<path d="M${fork.x} ${fork.y} L${fork.x} ${fork.y + 10} L${layerCenterX} ${fork.y + 10} L${layerCenterX} ${layer.y}" stroke="#999" stroke-width="${arrowWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
         // Merge 线：折线连接
-        parts.push(`<path d="M${layerCenterX} ${layer.y + layer.height} L${layerCenterX} ${merge.y - 10} L${merge.x} ${merge.y - 10} L${merge.x} ${merge.y}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+        parts.push(`<path d="M${layerCenterX} ${layer.y + layer.height} L${layerCenterX} ${merge.y - 10} L${merge.x} ${merge.y - 10} L${merge.x} ${merge.y}" stroke="#999" stroke-width="${arrowWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
       });
     } else {
       block.layers.forEach(layer => {
         const layerCenterY = layer.y + layer.height / 2;
         // Fork 线：折线连接
-        parts.push(`<path d="M${fork.x} ${fork.y} L${fork.x + 10} ${fork.y} L${fork.x + 10} ${layerCenterY} L${layer.x} ${layerCenterY}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+        parts.push(`<path d="M${fork.x} ${fork.y} L${fork.x + 10} ${fork.y} L${fork.x + 10} ${layerCenterY} L${layer.x} ${layerCenterY}" stroke="#999" stroke-width="${arrowWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
         // Merge 线：折线连接
-        parts.push(`<path d="M${layer.x + layer.width} ${layerCenterY} L${merge.x - 10} ${layerCenterY} L${merge.x - 10} ${merge.y} L${merge.x} ${merge.y}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+        parts.push(`<path d="M${layer.x + layer.width} ${layerCenterY} L${merge.x - 10} ${layerCenterY} L${merge.x - 10} ${merge.y} L${merge.x} ${merge.y}" stroke="#999" stroke-width="${arrowWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
       });
     }
   }
@@ -549,37 +562,38 @@ function generateParallelConnections(block) {
 function generateSkipConnection(block) {
   const parts = [];
   const skip = block.skipConnection;
+  const collapsedConfig = globalThis.COLLAPSED_CONFIG || {};
+  const isCollapsed = block.layers && block.layers.some(l => l.collapsed);
+  const strokeWidth = isCollapsed ? (collapsedConfig.arrowWidth || SVG_CONFIG.arrowWidth) : SVG_CONFIG.arrowWidth;
+  const arrowMarker = isCollapsed ? 'arrowhead-collapsed' : 'arrowhead';
 
   if (!skip) {
     // Legacy format: check for skipArc/skipLine
     if (block.skipStyle === 'arc' && block.skipArc) {
       const arc = block.skipArc;
-      parts.push(`<path d="M${arc.x1} ${arc.y1} Q${(arc.x1 + arc.x2) / 2} ${arc.midY} ${arc.x2} ${arc.y2}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+      parts.push(`<path d="M${arc.x1} ${arc.y1} Q${(arc.x1 + arc.x2) / 2} ${arc.midY} ${arc.x2} ${arc.y2}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
     }
     if (block.skipStyle === 'parallel' && block.skipLine) {
       const line = block.skipLine;
-      parts.push(`<path d="M${line.x1} ${line.y1} L${line.x2} ${line.y2}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+      parts.push(`<path d="M${line.x1} ${line.y1} L${line.x2} ${line.y2}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
     }
     return parts.join('\n');
   }
 
-  // New format: use skipConnection from layout
-  const strokeWidth = SVG_CONFIG.arrowWidth;
-
   if (skip.type === 'arc') {
     // 水平布局的弧形：从第一层顶部绕到最后一层顶部
     const midY = skip.startY - skip.radius;
-    parts.push(`<path d="M${skip.startX} ${skip.startY} Q${(skip.startX + skip.endX) / 2} ${midY} ${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+    parts.push(`<path d="M${skip.startX} ${skip.startY} Q${(skip.startX + skip.endX) / 2} ${midY} ${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
   } else if (skip.type === 'arc-vertical') {
     // 垂直布局的弧形：从第一层左侧绕到最后一层左侧
     const midX = skip.startX - skip.radius;
-    parts.push(`<path d="M${skip.startX} ${skip.startY} Q${midX} ${(skip.startY + skip.endY) / 2} ${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+    parts.push(`<path d="M${skip.startX} ${skip.startY} Q${midX} ${(skip.startY + skip.endY) / 2} ${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
   } else if (skip.type === 'parallel') {
     // 平行样式：直线
-    parts.push(`<path d="M${skip.startX} ${skip.startY} L${skip.endX} ${skip.startY} L${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+    parts.push(`<path d="M${skip.startX} ${skip.startY} L${skip.endX} ${skip.startY} L${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
   } else if (skip.type === 'parallel-vertical') {
     // 垂直布局的平行样式
-    parts.push(`<path d="M${skip.startX} ${skip.startY} L${skip.endX} ${skip.startY} L${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+    parts.push(`<path d="M${skip.startX} ${skip.startY} L${skip.endX} ${skip.startY} L${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
   }
 
   return parts.join('\n');

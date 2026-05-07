@@ -628,11 +628,12 @@ test('计算 collapsed parallel block 布局', function() {
     merge: 'concat'
   };
 
+  // horizontal 布局：使用正常宽度 216
   const layout = calculateBlockLayout(block, 100, 50, 'horizontal');
 
   assertEqual(layout.collapsed, true, 'Should have collapsed flag');
   assertEqual(layout.layers.length, 3, 'Collapsed parallel block should have 3 layers');
-  assertEqual(layout.layers[0].width, COLLAPSED_CONFIG.layerWidth, 'Collapsed layer width should match COLLAPSED_CONFIG');
+  assertEqual(layout.layers[0].width, COLLAPSED_CONFIG.horizontalLayerWidth, 'Horizontal collapsed layer width should be 216 (horizontalLayerWidth)');
   assertEqual(layout.layers[0].height, COLLAPSED_CONFIG.layerHeight, 'Collapsed layer height should match COLLAPSED_CONFIG');
   assertEqual(layout.layers[0].collapsed, true, 'Layers should have collapsed flag');
 });
@@ -651,11 +652,12 @@ test('计算 collapsed residual block 布局', function() {
     merge: 'add'
   };
 
+  // horizontal 布局：使用正常宽度 216
   const layout = calculateBlockLayout(block, 100, 50, 'horizontal');
 
   assertEqual(layout.collapsed, true, 'Should have collapsed flag');
   assertEqual(layout.layers.length, 2, 'Collapsed residual block should have 2 main layers');
-  assertEqual(layout.layers[0].width, COLLAPSED_CONFIG.layerWidth, 'Collapsed layer width should match COLLAPSED_CONFIG');
+  assertEqual(layout.layers[0].width, COLLAPSED_CONFIG.horizontalLayerWidth, 'Horizontal collapsed layer width should be 216 (horizontalLayerWidth)');
   assertEqual(layout.layers[0].height, COLLAPSED_CONFIG.layerHeight, 'Collapsed layer height should match COLLAPSED_CONFIG');
   assertEqual(layout.layers[0].collapsed, true, 'Layers should have collapsed flag');
   assertEqual(layout.skipConnection.type, 'arc', 'Should have arc skip connection');
@@ -673,11 +675,12 @@ test('计算 collapsed stack block 布局', function() {
     ]
   };
 
+  // horizontal 布局：使用正常宽度 216
   const layout = calculateBlockLayout(block, 100, 50, 'horizontal');
 
   assertEqual(layout.collapsed, true, 'Should have collapsed flag');
   assertEqual(layout.layers.length, 2, 'Collapsed stack block should show layers once');
-  assertEqual(layout.layers[0].width, COLLAPSED_CONFIG.layerWidth, 'Collapsed layer width should match COLLAPSED_CONFIG');
+  assertEqual(layout.layers[0].width, COLLAPSED_CONFIG.horizontalLayerWidth, 'Horizontal collapsed layer width should be 216 (horizontalLayerWidth)');
   assertEqual(layout.layers[0].height, COLLAPSED_CONFIG.layerHeight, 'Collapsed layer height should match COLLAPSED_CONFIG');
   assertEqual(layout.layers[0].collapsed, true, 'Layers should have collapsed flag');
   assertEqual(layout.repeatMarker !== undefined, true, 'Should have repeat marker');
