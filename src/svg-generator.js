@@ -404,8 +404,9 @@ function generateBlock(block) {
   parts.push(`<rect x="${block.x}" y="${block.y}" width="${block.width}" height="${block.height}" fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="${SVG_CONFIG.strokeWidth}" stroke-dasharray="${9},${9}" rx="${SVG_CONFIG.cornerRadius}"/>`);
 
   // 标题（block 名称或带重复标记）
+  // 显示 ×N 当：expand !== true (即 false、collapsed 或 undefined/默认值) 且 repeat > 1
   let titleText = block.name;
-  if (block.type === 'stack' && (block.expand === false || block.expand === 'collapsed') && block.repeat > 1) {
+  if (block.type === 'stack' && block.expand !== true && block.repeat > 1) {
     titleText = `${block.name} ×${block.repeat}`;
   }
   const titleY = block.titleY || (block.y + SVG_CONFIG.fontSizeSection);
