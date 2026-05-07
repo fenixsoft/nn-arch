@@ -453,6 +453,12 @@ function generateBlock(block) {
       // 兼容旧格式
       parts.push(generateSkipConnection(block));
     }
+    // 生成 block 内部的顺序连接（如 Conv1 → Conv2）
+    if (block.connections && block.connections.length > 0) {
+      block.connections.forEach(conn => {
+        parts.push(generateConnection(conn));
+      });
+    }
   }
 
   return parts.join('\n');

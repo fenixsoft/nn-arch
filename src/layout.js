@@ -1407,6 +1407,7 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
           width: layerWidth,
           height: layerHeight,
           data: layer,
+          path: 'main',  // 标识为 block 内部层
           collapsed: layout.collapsed
         });
         currentX += layerWidth + layerGap;
@@ -1416,12 +1417,27 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
       layout.width = currentX - layerGap + padding - startX;
       layout.height = titleHeight + arcRadius + layerHeight + padding;
 
-      // 主路径连接
-      layout.connections = calculateConnections(layout.layers);
+      // 主路径内部连接（Conv1 → Conv2）
+      // 直接计算，不使用 calculateConnections（因为层有 path 属性会被跳过）
+      const mainLayersList = layout.layers.filter(l => l.path === 'main');
+      layout.connections = [];
+      for (let i = 0; i < mainLayersList.length - 1; i++) {
+        const from = mainLayersList[i];
+        const to = mainLayersList[i + 1];
+        layout.connections.push({
+          from: from.name,
+          to: to.name,
+          x1: from.x + layerWidth,
+          y1: from.y + layerHeight / 2,
+          x2: to.x,
+          y2: to.y + layerHeight / 2,
+          type: 'sequential'
+        });
+      }
 
       // skip connection（arc 样式）
-      const firstLayer = layout.layers[0];
-      const lastLayer = layout.layers[layout.layers.length - 1];
+      const firstLayer = layout.layers.find(l => l.path === 'main');
+      const lastLayer = [...layout.layers].reverse().find(l => l.path === 'main');
 
       layout.skipConnection = {
         type: 'arc',
