@@ -445,9 +445,14 @@ function generateBlock(block) {
     parts.push(generateParallelConnections(block));
   }
 
-  // 残差块：生成 skip 连接
+  // 残差块：生成内部连接
   if (block.type === 'residual') {
-    parts.push(generateSkipConnection(block));
+    if (block.residualConnections) {
+      parts.push(generateResidualConnections(block));
+    } else if (block.skipConnection) {
+      // 兼容旧格式
+      parts.push(generateSkipConnection(block));
+    }
   }
 
   return parts.join('\n');
@@ -571,7 +576,47 @@ function generateParallelConnections(block) {
 }
 
 /**
- * 生成残差块的 skip 连接
+ * 生成残差块的内部连接（按用户描述的折线方式）
+ * @param {object} block - 块布局数据
+ * @returns {string} SVG 字符串
+ */
+function generateResidualConnections(block) {
+  const parts = [];
+  const conn = block.residualConnections;
+  const collapsedConfig = globalThis.COLLAPSED_CONFIG || {};
+  const isCollapsed = block.layers && block.layers.some(l => l.collapsed);
+  const strokeWidth = isCollapsed ? (collapsedConfig.arrowWidth || SVG_CONFIG.arrowWidth) : SVG_CONFIG.arrowWidth;
+  const arrowMarker = isCollapsed ? 'arrowhead-collapsed' : 'arrowhead';
+
+  if (!conn) return '';
+
+  // 1. 入口分叉：从 block 左边缘中心 → Conv1/Skip 左边中点（折线）
+  // forkToConv1: 先垂直向上到 Conv1 中心 y，再水平到 Conv1 左边
+  const forkToConv1 = conn.forkToConv1;
+  parts.push(`<path d="M${forkToConv1.from.x} ${forkToConv1.from.y} L${forkToConv1.from.x} ${forkToConv1.to.y} L${forkToConv1.to.x} ${forkToConv1.to.y}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
+
+  // forkToSkip: 先垂直向下到 Skip 中心 y，再水平到 Skip 左边
+  const forkToSkip = conn.forkToSkip;
+  parts.push(`<path d="M${forkToSkip.from.x} ${forkToSkip.from.y} L${forkToSkip.from.x} ${forkToSkip.to.y} L${forkToSkip.to.x} ${forkToSkip.to.y}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
+
+  // 2. 主路径连接：Conv1 右边中点 → Conv2 左边中点（直线）
+  const conv1ToConv2 = conn.conv1ToConv2;
+  parts.push(`<path d="M${conv1ToConv2.from.x} ${conv1ToConv2.from.y} L${conv1ToConv2.to.x} ${conv1ToConv2.to.y}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
+
+  // 3. 出口汇聚：Conv2/Skip 右边中点 → block 右边缘中心（折线）
+  // conv2ToExit: 先水平到 block 右边缘，再垂直到 block 中心 y
+  const conv2ToExit = conn.conv2ToExit;
+  parts.push(`<path d="M${conv2ToExit.from.x} ${conv2ToExit.from.y} L${conv2ToExit.to.x} ${conv2ToExit.from.y} L${conv2ToExit.to.x} ${conv2ToExit.to.y}" stroke="#999" stroke-width="${strokeWidth}" fill="none"/>`);
+
+  // skipToExit: 先水平到 block 右边缘，再垂直到 block 中心 y
+  const skipToExit = conn.skipToExit;
+  parts.push(`<path d="M${skipToExit.from.x} ${skipToExit.from.y} L${skipToExit.to.x} ${skipToExit.from.y} L${skipToExit.to.x} ${skipToExit.to.y}" stroke="#999" stroke-width="${strokeWidth}" fill="none"/>`);
+
+  return parts.join('\n');
+}
+
+/**
+ * 生成残差块的 skip 连接（兼容旧格式）
  * @param {object} block - 块布局数据
  * @returns {string} SVG 字符串
  */
@@ -667,6 +712,7 @@ if (typeof module !== 'undefined' && module.exports) {
     generateErrorSvg,
     generateBlock,
     generateParallelConnections,
+    generateResidualConnections,
     generateSkipConnection,
     getDisplayName,
     getLayerDetail,

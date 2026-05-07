@@ -1324,34 +1324,60 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
         layout.height = titleHeight + arcRadius + layerHeight + padding;
       }
 
-      // 主路径连接
+      // 主路径内部连接（Conv1 右边 → Conv2 左边）
       layout.connections = calculateConnections(
         layout.layers.filter(l => l.path === 'main')
       );
 
-      // skip connection（parallel 样式）
-      // 如果有 skip 层，连接线从 block 入口向下到 skip 层，再从 skip 层向上到 block 出口
+      // 残差块的所有连接（按用户描述的方式）
       if (hasSkipLayers) {
+        const firstMainLayer = layout.layers.find(l => l.path === 'main');
+        const lastMainLayer = [...layout.layers].reverse().find(l => l.path === 'main');
         const skipLayer = layout.layers.find(l => l.path === 'skip');
         const lastSkipLayer = [...layout.layers].reverse().find(l => l.path === 'skip');
 
-        // skip 层的中心位置
-        const skipCenterX = skipLayer.x + layerWidth / 2;
-
-        // block 入口/出口位置：容器边缘的中心
+        // block 入口/出口：容器边缘的中心
         const blockEntryX = startX;  // block 左边缘
         const blockExitX = startX + layout.width;  // block 右边缘
         const blockCenterY = startY + layout.height / 2;  // 容器中心 y
 
-        layout.skipConnection = {
-          type: 'parallel-with-layers',
-          forkX: blockEntryX,  // block 左边缘
-          forkY: blockCenterY,  // block 中心 y
-          skipCenterX: skipCenterX,  // skip 层中心
-          skipLayerStartY: skipLayer.y,  // skip 层入口 y
-          skipLayerEndY: lastSkipLayer.y + layerHeight,  // skip 层出口 y
-          mergeX: blockExitX,  // block 右边缘
-          mergeY: blockCenterY  // block 中心 y
+        // 各层的位置信息
+        const conv1LeftX = firstMainLayer.x;
+        const conv1CenterY = firstMainLayer.y + layerHeight / 2;
+        const conv1RightX = firstMainLayer.x + layerWidth;
+
+        const conv2LeftX = lastMainLayer.x;
+        const conv2CenterY = lastMainLayer.y + layerHeight / 2;
+        const conv2RightX = lastMainLayer.x + layerWidth;
+
+        const skipLeftX = skipLayer.x;
+        const skipCenterY = skipLayer.y + layerHeight / 2;
+        const skipRightX = lastSkipLayer.x + layerWidth;
+
+        layout.residualConnections = {
+          // 入口分叉：block 左边缘中心 → Conv1/Skip 左边中点
+          forkToConv1: {
+            from: { x: blockEntryX, y: blockCenterY },
+            to: { x: conv1LeftX, y: conv1CenterY }
+          },
+          forkToSkip: {
+            from: { x: blockEntryX, y: blockCenterY },
+            to: { x: skipLeftX, y: skipCenterY }
+          },
+          // 主路径连接：Conv1 右边中点 → Conv2 左边中点（直线，已在 connections 中）
+          conv1ToConv2: {
+            from: { x: conv1RightX, y: conv1CenterY },
+            to: { x: conv2LeftX, y: conv2CenterY }
+          },
+          // 出口汇聚：Conv2/Skip 右边中点 → block 右边缘中心
+          conv2ToExit: {
+            from: { x: conv2RightX, y: conv2CenterY },
+            to: { x: blockExitX, y: blockCenterY }
+          },
+          skipToExit: {
+            from: { x: skipRightX, y: skipCenterY },
+            to: { x: blockExitX, y: blockCenterY }
+          }
         };
       } else {
         // identity shortcut：skip 连线从 block 入口上方直接到出口上方
