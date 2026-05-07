@@ -11,7 +11,8 @@ test('LAYOUT_CONFIG 已导出到 globalThis', function() {
 test('COLLAPSED_CONFIG 已导出到 globalThis', function() {
   assertEqual(typeof globalThis.COLLAPSED_CONFIG, 'object', 'COLLAPSED_CONFIG 应为对象');
   assertEqual(globalThis.COLLAPSED_CONFIG.layerWidth, 50, 'layerWidth 应为 50');
-  assertEqual(globalThis.COLLAPSED_CONFIG.layerHeight, 30, 'layerHeight 应为 30');
+  assertEqual(globalThis.COLLAPSED_CONFIG.layerHeight, 26, 'layerHeight 应为 26');
+  assertEqual(globalThis.COLLAPSED_CONFIG.horizontalLayerWidth, 78, 'horizontalLayerWidth 应为 78');
 });
 
 test('parseNetworkYaml 已导出到 globalThis', function() {

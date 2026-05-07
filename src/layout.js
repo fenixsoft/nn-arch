@@ -34,9 +34,9 @@ const LAYOUT_CONFIG = {
 const COLLAPSED_CONFIG = {
   // 层尺寸：vertical 布局使用最小尺寸，horizontal 布局也使用最小尺寸以使block整体宽度紧凑
   layerWidth: 50,           // vertical 布局最小方块宽度
-  horizontalLayerWidth: 50, // horizontal 布局也使用最小宽度，使collapsed block整体宽度紧凑
+  horizontalLayerWidth: 78, // horizontal 布局内部元素宽度增大（block内容区域宽度186，可容纳2个元素+间距）
   horizontalBlockWidth: 216, // horizontal 布局下collapsed block的整体宽度（与普通层一致）
-  layerHeight: 30,          // 最小方块高度（vs 正常 126）
+  layerHeight: 26,          // 最小方块高度（减少4px）
   layerGap: 10,             // 最小方块间距（vs 正常 27）
   blockPadding: 15,         // collapsed block 内边距（vs 正常 27）
   titleGap: 15,             // 标题与内容间距（增加到 15 避免遮挡）
@@ -306,8 +306,47 @@ function calculateSectionsLayout(network, layout) {
     // 保存该section的元素顺序
     sectionElementOrders[sectionIndex] = elementOrder;
 
-    // 计算 section 框位置（可能包含多行）
+    // 所有元素列表（用于计算section框和垂直居中对齐）
     const allElements = [...sectionLayers, ...sectionBlocks];
+
+    // 垂直居中对齐：调整同一行的元素y坐标使其居中
+    // 按行分组元素（使用y坐标）
+    const rowsForAlign = {};
+    allElements.forEach(el => {
+      const rowKey = Math.round(el.y);
+      if (!rowsForAlign[rowKey]) rowsForAlign[rowKey] = [];
+      rowsForAlign[rowKey].push(el);
+    });
+
+    // 对每行计算最大高度，调整所有元素居中
+    Object.keys(rowsForAlign).forEach(rowY => {
+      const rowEls = rowsForAlign[rowY];
+      if (rowEls.length < 2) return; // 只有一个元素不需要调整
+
+      const maxHeight = Math.max(...rowEls.map(el => el.height));
+      const baseY = parseFloat(rowY);
+
+      rowEls.forEach(el => {
+        const yOffset = (maxHeight - el.height) / 2;
+        const newY = baseY + yOffset;
+
+        // 更新元素y坐标
+        el.y = newY;
+
+        // 如果是block，也需要更新其内部层的y坐标
+        if (el.layers) {
+          const deltaY = yOffset;
+          el.layers.forEach(layer => {
+            layer.y += deltaY;
+          });
+          // 更新fork/merge点的y坐标
+          if (el.forkPoint) el.forkPoint.y += deltaY;
+          if (el.mergePoint) el.mergePoint.y += deltaY;
+        }
+      });
+    });
+
+    // 计算 section 框位置（可能包含多行）
     if (allElements.length > 0) {
       const minX = Math.min(...allElements.map(el => el.x)) - LAYOUT_CONFIG.sectionPadding;
       const maxX = Math.max(...allElements.map(el => el.x + el.width)) + LAYOUT_CONFIG.sectionPadding;
