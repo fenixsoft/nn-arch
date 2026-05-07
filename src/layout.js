@@ -1329,10 +1329,21 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
       const blockRightX = startX + layout.width;
       const blockCenterY = startY + layout.height / 2;
 
-      // 主路径内部连接（Conv1 右边 → Conv2 左边）
-      layout.connections = calculateConnections(
-        layout.layers.filter(l => l.path === 'main')
-      );
+      // 主路径内部连接（手动创建，因为 calculateConnections 会跳过有 path 属性的层）
+      const mainLayersForConn = layout.layers.filter(l => l.path === 'main');
+      for (let i = 0; i < mainLayersForConn.length - 1; i++) {
+        const from = mainLayersForConn[i];
+        const to = mainLayersForConn[i + 1];
+        layout.connections.push({
+          from: from.name,
+          to: to.name,
+          x1: from.x + layerWidth,
+          y1: from.y + layerHeight / 2,
+          x2: to.x,
+          y2: to.y + layerHeight / 2,
+          type: 'block-internal'
+        });
+      }
 
       // 残差块的所有连接（使用 polyline 格式）
       if (hasSkipLayers) {
@@ -1373,13 +1384,7 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
               { x: skipLeftX, y: skipCenterY }     // 水平到 Skip 左边
             ]
           },
-          // 主路径：Conv1 右中点 → Conv2 左中点（直线）
-          conv1ToConv2: {
-            type: 'line',
-            from: { x: conv1RightX, y: conv1CenterY },
-            to: { x: conv2LeftX, y: conv2CenterY }
-          },
-          // 出口汇聚：Conv2 右中点 → 向上折线到 block 右边缘中心
+          // 出口汇聚：最后一个主层右中点 → 向上折线到 block 右边缘中心
           conv2ToExit: {
             type: 'polyline',
             points: [
@@ -1446,8 +1451,22 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
       // 标题底部位置
       const titleBottomY = startY + titleHeight;
 
-      // 主路径层
+      // 主路径内部连接（手动创建，因为 calculateConnections 会跳过有 path 属性的层）
       const mainLayersList = layout.layers.filter(l => l.path === 'main');
+      for (let i = 0; i < mainLayersList.length - 1; i++) {
+        const from = mainLayersList[i];
+        const to = mainLayersList[i + 1];
+        layout.connections.push({
+          from: from.name,
+          to: to.name,
+          x1: from.x + layerWidth,
+          y1: from.y + layerHeight / 2,
+          x2: to.x,
+          y2: to.y + layerHeight / 2,
+          type: 'block-internal'
+        });
+      }
+
       const conv1 = mainLayersList[0];
       const conv2 = mainLayersList[mainLayersList.length - 1];
 
@@ -1486,13 +1505,7 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
             { x: conv1LeftX, y: conv1CenterY }   // 水平到 Conv1 左边
           ]
         },
-        // 主路径：Conv1 右中点 → Conv2 左中点（直线）
-        conv1ToConv2: {
-          type: 'line',
-          from: { x: conv1RightX, y: conv1CenterY },
-          to: { x: conv2LeftX, y: conv2CenterY }
-        },
-        // 出口汇聚：Conv2 右中点 → 向上折线到 block 右边缘中心
+        // 出口汇聚：最后一个主层右中点 → 向上折线到 block 右边缘中心
         conv2ToExit: {
           type: 'polyline',
           points: [

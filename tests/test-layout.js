@@ -480,7 +480,7 @@ test('计算 residual block arc 样式布局', function() {
   assertEqual(blockLayout.residualConnections !== undefined, true, '存在 residualConnections');
   assertEqual(blockLayout.residualConnections.skip !== undefined, true, '存在 skip 折线');
   assertEqual(blockLayout.residualConnections.entryToConv1 !== undefined, true, '存在入口分叉');
-  assertEqual(blockLayout.residualConnections.conv1ToConv2 !== undefined, true, '存在主路径');
+  assertEqual(blockLayout.connections !== undefined && blockLayout.connections.length > 0, true, '存在主路径连接');
   assertEqual(blockLayout.residualConnections.conv2ToExit !== undefined, true, '存在出口汇聚');
 });
 
@@ -507,7 +507,7 @@ test('计算 residual block parallel 样式布局', function() {
   assertEqual(blockLayout.residualConnections !== undefined, true, '有 residualConnections');
   assertEqual(blockLayout.residualConnections.entryToConv1 !== undefined, true, '有入口分叉到Conv1');
   assertEqual(blockLayout.residualConnections.entryToSkip !== undefined, true, '有入口分叉到Skip');
-  assertEqual(blockLayout.residualConnections.conv1ToConv2 !== undefined, true, '有Conv1到Conv2连接');
+  assertEqual(blockLayout.connections !== undefined && blockLayout.connections.length > 0, true, '有主路径连接');
   assertEqual(blockLayout.residualConnections.conv2ToExit !== undefined, true, '有Conv2出口连接');
   assertEqual(blockLayout.residualConnections.skipToExit !== undefined, true, '有Skip出口连接');
 });
