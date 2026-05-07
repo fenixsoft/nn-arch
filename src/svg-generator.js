@@ -404,14 +404,21 @@ function generateBlock(block) {
   parts.push(`<rect x="${block.x}" y="${block.y}" width="${block.width}" height="${block.height}" fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="${SVG_CONFIG.strokeWidth}" stroke-dasharray="${9},${9}" rx="${SVG_CONFIG.cornerRadius}"/>`);
 
   // 标题（block 名称或带重复标记）
-  const titleText = block.repeat ? `${block.name} ×${block.repeat}` : block.name;
+  let titleText = block.name;
+  if (block.type === 'stack' && (block.expand === false || block.expand === 'collapsed') && block.repeat > 1) {
+    titleText = `${block.name} ×${block.repeat}`;
+  }
   const titleY = block.titleY || (block.y + SVG_CONFIG.fontSizeSection);
   parts.push(`<text x="${centerX}" y="${titleY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeSection}" font-weight="bold" font-family="Arial, sans-serif" fill="#333">${titleText}</text>`);
 
   // 内部层
   if (block.layers) {
     block.layers.forEach(layer => {
-      parts.push(generateLayer(layer));
+      if (layer.collapsed) {
+        parts.push(generateCollapsedLayer(layer));
+      } else {
+        parts.push(generateLayer(layer));
+      }
     });
   }
 
