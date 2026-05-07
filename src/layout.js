@@ -34,9 +34,9 @@ const LAYOUT_CONFIG = {
 const COLLAPSED_CONFIG = {
   // 层尺寸：vertical 布局使用最小尺寸，horizontal 布局也使用最小尺寸以使block整体宽度紧凑
   layerWidth: 50,           // vertical 布局最小方块宽度
-  horizontalLayerWidth: 78, // horizontal 布局内部元素宽度增大（block内容区域宽度186，可容纳2个元素+间距）
+  horizontalLayerWidth: 82, // horizontal 布局内部元素宽度增大
   horizontalBlockWidth: 216, // horizontal 布局下collapsed block的整体宽度（与普通层一致）
-  layerHeight: 26,          // 最小方块高度（减少4px）
+  layerHeight: 24,          // 最小方块高度
   layerGap: 10,             // 最小方块间距（vs 正常 27）
   blockPadding: 15,         // collapsed block 内边距（vs 正常 27）
   titleGap: 15,             // 标题与内容间距（增加到 15 避免遮挡）
@@ -373,98 +373,73 @@ function calculateSectionsLayout(network, layout) {
   layout.connections = calculateConnections(layout.layers);
 
   // 计算 section 内元素之间的连接（包括 blocks）
-  // 根据元素顺序数组计算相邻元素之间的连接
+  // 使用elementOrder的原始顺序（YAML中定义的顺序）计算相邻元素之间的连接
   layout.sectionInternalConnections = [];
-  sectionElementOrders.forEach((elementOrder, sectionIndex) => {
-    if (elementOrder.length < 2) return;
-
-    // 找到同一行内的相邻元素，计算连接
-    // 首先按行分组元素（使用y坐标判断）
-    const rows = {};
-    elementOrder.forEach(el => {
-      const rowKey = Math.round(el.layout.y); // 使用整数y坐标作为行key
-      if (!rows[rowKey]) rows[rowKey] = [];
-      rows[rowKey].push(el);
-    });
-
-    // 对每行内的元素按x坐标排序，然后计算相邻连接
-    Object.keys(rows).sort((a, b) => parseFloat(a) - parseFloat(b)).forEach(rowY => {
-      const rowElements = rows[rowY].sort((a, b) => a.layout.x - b.layout.x);
-
-      for (let i = 0; i < rowElements.length - 1; i++) {
-        const fromEl = rowElements[i];
-        const toEl = rowElements[i + 1];
-
-        // 计算连接坐标
-        // 对于block：从block右侧中心到下一个元素左侧中心
-        // 对于layer：从层右侧中心到下一个元素左侧中心
-        const fromX = fromEl.layout.x + fromEl.layout.width;
-        const fromY = fromEl.type === 'block'
-          ? fromEl.layout.y + fromEl.layout.height / 2
-          : fromEl.layout.y + fromEl.layout.height / 2;
-        const toX = toEl.layout.x;
-        const toY = toEl.type === 'block'
-          ? toEl.layout.y + toEl.layout.height / 2
-          : toEl.layout.y + toEl.layout.height / 2;
-
-        layout.sectionInternalConnections.push({
-          from: fromEl.name,
-          to: toEl.name,
-          x1: fromX,
-          y1: fromY,
-          x2: toX,
-          y2: toY,
-          type: 'section-internal',
-          sectionIndex: sectionIndex
-        });
-      }
-    });
-  });
-
-  // 计算 section 内换行的折线连接（使用elementOrder判断行边界）
   layout.sectionRowConnections = [];
+
   sectionElementOrders.forEach((elementOrder, sectionIndex) => {
     if (elementOrder.length < 2) return;
 
-    // 按行分组元素
-    const rows = {};
-    elementOrder.forEach(el => {
-      const rowKey = Math.round(el.layout.y);
-      if (!rows[rowKey]) rows[rowKey] = [];
-      rows[rowKey].push(el);
-    });
-
-    const rowKeys = Object.keys(rows).sort((a, b) => parseFloat(a) - parseFloat(b));
-    if (rowKeys.length <= 1) return; // 只有单行
-
-    // 对每行元素按x排序，找出每行的最后一个和下一行的第一个
-    for (let r = 0; r < rowKeys.length - 1; r++) {
-      const currentRowElements = rows[rowKeys[r]].sort((a, b) => a.layout.x - b.layout.x);
-      const nextRowElements = rows[rowKeys[r + 1]].sort((a, b) => a.layout.x - b.layout.x);
-
-      if (currentRowElements.length > 0 && nextRowElements.length > 0) {
-        const fromEl = currentRowElements[currentRowElements.length - 1]; // 当前行最后一个
-        const toEl = nextRowElements[0]; // 下一行第一个
-
-        // 折线连接：从当前行最后元素底部 -> 中间 -> 下一行第一个元素顶部
-        const fromX = fromEl.layout.x + fromEl.layout.width / 2;
-        const fromY = fromEl.layout.y + fromEl.layout.height;
-        const toX = toEl.layout.x + toEl.layout.width / 2;
-        const toY = toEl.layout.y;
-        const midY = fromY + (toY - fromY) / 2;
-
-        layout.sectionRowConnections.push({
-          from: fromEl.name,
-          to: toEl.name,
-          fromX: fromX,
-          fromY: fromY,
-          midY: midY,
-          toX: toX,
-          toY: toY,
-          sectionIndex: sectionIndex
-        });
+    // 找出换行点：当元素x坐标从大变小，说明换行了
+    const rowBreaks = [];
+    for (let i = 1; i < elementOrder.length; i++) {
+      const prevEl = elementOrder[i - 1];
+      const currEl = elementOrder[i];
+      // 如果当前元素的x小于前一个元素的x，说明换行了
+      if (currEl.layout.x < prevEl.layout.x) {
+        rowBreaks.push(i);
       }
     }
+
+    // 计算行内的相邻元素连接
+    // 遍历所有相邻元素，但跳过换行点
+    for (let i = 0; i < elementOrder.length - 1; i++) {
+      // 如果当前索引后面是换行点，跳过这个连接（用折线处理）
+      if (rowBreaks.includes(i + 1)) continue;
+
+      const fromEl = elementOrder[i];
+      const toEl = elementOrder[i + 1];
+
+      // 计算连接坐标
+      const fromX = fromEl.layout.x + fromEl.layout.width;
+      const fromY = fromEl.layout.y + fromEl.layout.height / 2;
+      const toX = toEl.layout.x;
+      const toY = toEl.layout.y + toEl.layout.height / 2;
+
+      layout.sectionInternalConnections.push({
+        from: fromEl.name,
+        to: toEl.name,
+        x1: fromX,
+        y1: fromY,
+        x2: toX,
+        y2: toY,
+        type: 'section-internal',
+        sectionIndex: sectionIndex
+      });
+    }
+
+    // 计算换行点的折线连接
+    rowBreaks.forEach(breakIdx => {
+      const fromEl = elementOrder[breakIdx - 1]; // 换行前最后一个
+      const toEl = elementOrder[breakIdx]; // 换行后第一个
+
+      const fromX = fromEl.layout.x + fromEl.layout.width / 2;
+      const fromY = fromEl.layout.y + fromEl.layout.height;
+      const toX = toEl.layout.x + toEl.layout.width / 2;
+      const toY = toEl.layout.y;
+      const midY = fromY + (toY - fromY) / 2;
+
+      layout.sectionRowConnections.push({
+        from: fromEl.name,
+        to: toEl.name,
+        fromX: fromX,
+        fromY: fromY,
+        midY: midY,
+        toX: toX,
+        toY: toY,
+        sectionIndex: sectionIndex
+      });
+    });
   });
 
   // 计算行间连接（折线：从上一section底部到下一section顶部）
