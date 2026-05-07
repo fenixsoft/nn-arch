@@ -205,6 +205,7 @@ function calculateHorizontalLayout(network, layout) {
 
 /**
  * 按 sections 分行布局（每个 section 内支持换行）
+ * 支持 layers 和 blocks 混合引用
  */
 function calculateSectionsLayout(network, layout) {
   const layerHeight = LAYOUT_CONFIG.layerHeight;
@@ -223,48 +224,84 @@ function calculateSectionsLayout(network, layout) {
     const sectionStartY = currentY;
     const sectionTitleY = currentY + LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.sectionTitleGap / 2;
 
-    // 记录该 section 的层
+    // 记录该 section 的层和 blocks
     const sectionLayers = [];
+    const sectionBlocks = [];
     let layerStartY = sectionTitleY + LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.sectionTitleGap;
     let currentX = rowStartX;
     let rowCount = 0;
 
-    // 将层分配到多行（每行最多 maxLayersPerRow 个）
-    sectionLayerIds.forEach((layerId, idx) => {
-      const layerData = network.layers.find(l => l.id === layerId || l.name === layerId);
-      if (layerData) {
-        // 检查是否需要换行
-        const positionInRow = idx % LAYOUT_CONFIG.maxLayersPerRow;
-        if (positionInRow === 0 && idx > 0) {
-          // 换行，增加额外的换行间距
+    // 计数器：层+block 的总数用于换行判断
+    let elementCount = 0;
+
+    // 将层和 blocks 分配到多行（每行最多 maxLayersPerRow 个元素）
+    sectionLayerIds.forEach((elementId, idx) => {
+      // 先检查是否是 block
+      const blockData = network.blocks ? network.blocks.find(b => b.name === elementId) : null;
+
+      if (blockData) {
+        // 这是一个 block
+        const blockLayout = calculateBlockLayout(blockData, currentX, layerStartY, 'horizontal');
+        layout.blocks.push(blockLayout);
+        sectionBlocks.push(blockLayout);
+
+        // 将 block 内部层添加到全局 layers 数组
+        blockLayout.layers.forEach(layer => {
+          layout.layers.push(layer);
+        });
+
+        // 更新 currentX 到 block 右边缘
+        currentX += blockLayout.width + LAYOUT_CONFIG.layerGap;
+        elementCount++;
+
+        // 检查是否需要换行（基于 block 宽度占用的空间）
+        // 一个 block 可能相当于多个层的宽度
+        const blockWidthInLayers = Math.ceil(blockLayout.width / layerWidth);
+        if (elementCount + blockWidthInLayers > LAYOUT_CONFIG.maxLayersPerRow && idx < sectionLayerIds.length - 1) {
           rowCount++;
           currentX = rowStartX;
-          layerStartY += layerHeight + LAYOUT_CONFIG.layerGap + LAYOUT_CONFIG.rowWrapGap;
+          layerStartY += Math.max(layerHeight, blockLayout.height) + LAYOUT_CONFIG.layerGap + LAYOUT_CONFIG.rowWrapGap;
+          elementCount = 0;
         }
+      } else {
+        // 这是一个普通的 layer，检查 layers 和 layersAfterBlocks
+        const layerData = network.layers.find(l => l.id === elementId || l.name === elementId)
+          || (network.layersAfterBlocks && network.layersAfterBlocks.find(l => l.id === elementId || l.name === elementId));
+        if (layerData) {
+          // 检查是否需要换行
+          if (elementCount >= LAYOUT_CONFIG.maxLayersPerRow && elementCount > 0) {
+            rowCount++;
+            currentX = rowStartX;
+            layerStartY += layerHeight + LAYOUT_CONFIG.layerGap + LAYOUT_CONFIG.rowWrapGap;
+            elementCount = 0;
+          }
 
-        const layer = {
-          name: layerData.name,
-          type: layerData.type,
-          x: currentX,
-          y: layerStartY,
-          width: layerWidth,
-          height: layerHeight,
-          data: layerData,
-          sectionIndex: sectionIndex,
-          rowIndex: rowCount
-        };
-        layout.layers.push(layer);
-        sectionLayers.push(layer);
-        currentX += layerWidth + LAYOUT_CONFIG.layerGap;
+          const layer = {
+            name: layerData.name,
+            type: layerData.type,
+            x: currentX,
+            y: layerStartY,
+            width: layerWidth,
+            height: layerHeight,
+            data: layerData,
+            sectionIndex: sectionIndex,
+            rowIndex: rowCount
+          };
+          layout.layers.push(layer);
+          sectionLayers.push(layer);
+          currentX += layerWidth + LAYOUT_CONFIG.layerGap;
+          elementCount++;
+        }
       }
     });
 
     // 计算 section 框位置（可能包含多行）
-    if (sectionLayers.length > 0) {
-      const minX = Math.min(...sectionLayers.map(l => l.x)) - LAYOUT_CONFIG.sectionPadding;
-      const maxX = Math.max(...sectionLayers.map(l => l.x + l.width)) + LAYOUT_CONFIG.sectionPadding;
+    const allElements = [...sectionLayers, ...sectionBlocks];
+    if (allElements.length > 0) {
+      const minX = Math.min(...allElements.map(el => el.x)) - LAYOUT_CONFIG.sectionPadding;
+      const maxX = Math.max(...allElements.map(el => el.x + el.width)) + LAYOUT_CONFIG.sectionPadding;
       const minY = sectionStartY;
-      const maxY = Math.max(...sectionLayers.map(l => l.y + l.height)) + LAYOUT_CONFIG.sectionPadding;
+      const maxY = Math.max(...allElements.map(el => el.y + el.height)) + LAYOUT_CONFIG.sectionPadding;
 
       layout.sections.push({
         name: section.name,

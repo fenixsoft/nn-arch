@@ -241,7 +241,7 @@ layers_after_blocks:
   googlenet_collapsed: {
     name: 'GoogLeNet (Collapsed Inception)',
     template: `name: GoogLeNet (Collapsed)
-layout: vertical
+layout: horizontal
 
 sections:
   - name: 初始特征提取
