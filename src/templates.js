@@ -236,6 +236,147 @@ blocks:
 
 layers_after_blocks:
   - {id: output, name: Output, type: output, size: "28x28x256"}`
+  },
+
+  googlenet_collapsed: {
+    name: 'GoogLeNet (Collapsed Inception)',
+    template: `name: GoogLeNet (Collapsed)
+layout: vertical
+
+layers:
+  - {id: input, name: Input, type: input, size: "224x224x3"}
+  - {id: conv1, name: Conv1, type: conv, kernel: 7, stride: 2, channels: 64, out: "112x112x64", act: ReLU}
+  - {id: pool1, name: Pool1, type: pool, kernel: 3, stride: 2, out: "56x56x64"}
+  - {id: conv2, name: Conv2, type: conv, kernel: 3, channels: 192, act: ReLU}
+  - {id: pool2, name: Pool2, type: pool, kernel: 3, stride: 2, out: "28x28x192"}
+
+blocks:
+  - name: Inception_3a
+    type: parallel
+    expand: "collapsed"
+    branches:
+      - {id: inc3a_1x1, name: "1x1", type: conv, kernel: 1, channels: 64, act: ReLU}
+      - [{id: inc3a_3x3r, name: "reduce", type: conv, kernel: 1, channels: 96, act: ReLU},
+         {id: inc3a_3x3, name: "3x3", type: conv, kernel: 3, channels: 128, act: ReLU}]
+      - [{id: inc3a_5x5r, name: "reduce", type: conv, kernel: 1, channels: 16, act: ReLU},
+         {id: inc3a_5x5, name: "5x5", type: conv, kernel: 5, channels: 32, act: ReLU}]
+      - [{id: inc3a_pool, name: "pool", type: pool, kernel: 3},
+         {id: inc3a_proj, name: "proj", type: conv, kernel: 1, channels: 32, act: ReLU}]
+    merge: concat
+
+  - name: Inception_3b
+    type: parallel
+    expand: "collapsed"
+    branches:
+      - {id: inc3b_1x1, name: "1x1", type: conv, kernel: 1, channels: 128, act: ReLU}
+      - [{id: inc3b_3x3r, name: "reduce", type: conv, kernel: 1, channels: 128, act: ReLU},
+         {id: inc3b_3x3, name: "3x3", type: conv, kernel: 3, channels: 192, act: ReLU}]
+      - [{id: inc3b_5x5r, name: "reduce", type: conv, kernel: 1, channels: 32, act: ReLU},
+         {id: inc3b_5x5, name: "5x5", type: conv, kernel: 5, channels: 96, act: ReLU}]
+      - [{id: inc3b_pool, name: "pool", type: pool, kernel: 3},
+         {id: inc3b_proj, name: "proj", type: conv, kernel: 1, channels: 64, act: ReLU}]
+    merge: concat
+
+  - {id: pool3, name: Pool3, type: pool, kernel: 3, stride: 2}
+
+  - name: Inception_4a
+    type: parallel
+    expand: "collapsed"
+    branches:
+      - {id: inc4a_1x1, name: "1x1", type: conv, kernel: 1, channels: 192, act: ReLU}
+      - [{id: inc4a_3x3r, name: "reduce", type: conv, kernel: 1, channels: 96, act: ReLU},
+         {id: inc4a_3x3, name: "3x3", type: conv, kernel: 3, channels: 208, act: ReLU}]
+      - [{id: inc4a_5x5r, name: "reduce", type: conv, kernel: 1, channels: 16, act: ReLU},
+         {id: inc4a_5x5, name: "5x5", type: conv, kernel: 5, channels: 48, act: ReLU}]
+      - [{id: inc4a_pool, name: "pool", type: pool, kernel: 3},
+         {id: inc4a_proj, name: "proj", type: conv, kernel: 1, channels: 64, act: ReLU}]
+    merge: concat
+
+  - name: Inception_4b
+    type: parallel
+    expand: "collapsed"
+    branches:
+      - {id: inc4b_1x1, name: "1x1", type: conv, kernel: 1, channels: 160, act: ReLU}
+      - [{id: inc4b_3x3r, name: "reduce", type: conv, kernel: 1, channels: 112, act: ReLU},
+         {id: inc4b_3x3, name: "3x3", type: conv, kernel: 3, channels: 224, act: ReLU}]
+      - [{id: inc4b_5x5r, name: "reduce", type: conv, kernel: 1, channels: 24, act: ReLU},
+         {id: inc4b_5x5, name: "5x5", type: conv, kernel: 5, channels: 64, act: ReLU}]
+      - [{id: inc4b_pool, name: "pool", type: pool, kernel: 3},
+         {id: inc4b_proj, name: "proj", type: conv, kernel: 1, channels: 64, act: ReLU}]
+    merge: concat
+
+  - name: Inception_4c
+    type: parallel
+    expand: "collapsed"
+    branches:
+      - {id: inc4c_1x1, name: "1x1", type: conv, kernel: 1, channels: 128, act: ReLU}
+      - [{id: inc4c_3x3r, name: "reduce", type: conv, kernel: 1, channels: 128, act: ReLU},
+         {id: inc4c_3x3, name: "3x3", type: conv, kernel: 3, channels: 256, act: ReLU}]
+      - [{id: inc4c_5x5r, name: "reduce", type: conv, kernel: 1, channels: 24, act: ReLU},
+         {id: inc4c_5x5, name: "5x5", type: conv, kernel: 5, channels: 64, act: ReLU}]
+      - [{id: inc4c_pool, name: "pool", type: pool, kernel: 3},
+         {id: inc4c_proj, name: "proj", type: conv, kernel: 1, channels: 64, act: ReLU}]
+    merge: concat
+
+  - name: Inception_4d
+    type: parallel
+    expand: "collapsed"
+    branches:
+      - {id: inc4d_1x1, name: "1x1", type: conv, kernel: 1, channels: 112, act: ReLU}
+      - [{id: inc4d_3x3r, name: "reduce", type: conv, kernel: 1, channels: 144, act: ReLU},
+         {id: inc4d_3x3, name: "3x3", type: conv, kernel: 3, channels: 288, act: ReLU}]
+      - [{id: inc4d_5x5r, name: "reduce", type: conv, kernel: 1, channels: 32, act: ReLU},
+         {id: inc4d_5x5, name: "5x5", type: conv, kernel: 5, channels: 64, act: ReLU}]
+      - [{id: inc4d_pool, name: "pool", type: pool, kernel: 3},
+         {id: inc4d_proj, name: "proj", type: conv, kernel: 1, channels: 64, act: ReLU}]
+    merge: concat
+
+  - name: Inception_4e
+    type: parallel
+    expand: "collapsed"
+    branches:
+      - {id: inc4e_1x1, name: "1x1", type: conv, kernel: 1, channels: 256, act: ReLU}
+      - [{id: inc4e_3x3r, name: "reduce", type: conv, kernel: 1, channels: 160, act: ReLU},
+         {id: inc4e_3x3, name: "3x3", type: conv, kernel: 3, channels: 320, act: ReLU}]
+      - [{id: inc4e_5x5r, name: "reduce", type: conv, kernel: 1, channels: 32, act: ReLU},
+         {id: inc4e_5x5, name: "5x5", type: conv, kernel: 5, channels: 128, act: ReLU}]
+      - [{id: inc4e_pool, name: "pool", type: pool, kernel: 3},
+         {id: inc4e_proj, name: "proj", type: conv, kernel: 1, channels: 128, act: ReLU}]
+    merge: concat
+
+  - {id: pool4, name: Pool4, type: pool, kernel: 3, stride: 2}
+
+  - name: Inception_5a
+    type: parallel
+    expand: "collapsed"
+    branches:
+      - {id: inc5a_1x1, name: "1x1", type: conv, kernel: 1, channels: 256, act: ReLU}
+      - [{id: inc5a_3x3r, name: "reduce", type: conv, kernel: 1, channels: 160, act: ReLU},
+         {id: inc5a_3x3, name: "3x3", type: conv, kernel: 3, channels: 320, act: ReLU}]
+      - [{id: inc5a_5x5r, name: "reduce", type: conv, kernel: 1, channels: 32, act: ReLU},
+         {id: inc5a_5x5, name: "5x5", type: conv, kernel: 5, channels: 128, act: ReLU}]
+      - [{id: inc5a_pool, name: "pool", type: pool, kernel: 3},
+         {id: inc5a_proj, name: "proj", type: conv, kernel: 1, channels: 128, act: ReLU}]
+    merge: concat
+
+  - name: Inception_5b
+    type: parallel
+    expand: "collapsed"
+    branches:
+      - {id: inc5b_1x1, name: "1x1", type: conv, kernel: 1, channels: 384, act: ReLU}
+      - [{id: inc5b_3x3r, name: "reduce", type: conv, kernel: 1, channels: 192, act: ReLU},
+         {id: inc5b_3x3, name: "3x3", type: conv, kernel: 3, channels: 384, act: ReLU}]
+      - [{id: inc5b_5x5r, name: "reduce", type: conv, kernel: 1, channels: 48, act: ReLU},
+         {id: inc5b_5x5, name: "5x5", type: conv, kernel: 5, channels: 128, act: ReLU}]
+      - [{id: inc5b_pool, name: "pool", type: pool, kernel: 3},
+         {id: inc5b_proj, name: "proj", type: conv, kernel: 1, channels: 128, act: ReLU}]
+    merge: concat
+
+layers_after_blocks:
+  - {id: pool5, name: Pool5, type: pool, kernel: 7, stride: 1}
+  - {id: fc1, name: FC1, type: fc, size: 1024, act: ReLU, dropout: true}
+  - {id: fc2, name: FC2, type: fc, size: 1000}
+  - {id: output, name: Output, type: output, size: 1000, act: Softmax}`
   }
 };
 
