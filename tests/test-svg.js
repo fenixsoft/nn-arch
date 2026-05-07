@@ -453,3 +453,67 @@ layers_after_blocks:
   assertEqual(svg.includes('ResBlock'), true, '包含 block 名称');
   assertEqual(svg.includes('Output'), true, '包含 Output 层');
 });
+
+// === 收缩块 SVG 生成测试 ===
+
+test('生成收缩层 SVG (generateCollapsedLayer)', function() {
+  const layer = {
+    name: 'collapsedConv',
+    type: 'conv',
+    x: 10,
+    y: 10,
+    width: 50,
+    height: 30,
+    collapsed: true,
+    data: { kernel: 3, channels: 64 }
+  };
+
+  const svg = generateCollapsedLayer(layer);
+
+  // 收缩层不应包含文本元素
+  assertEqual(!svg.includes('<text'), true, '收缩层不应包含文本元素');
+
+  // 应包含 rect 元素
+  assertEqual(svg.includes('<rect'), true, '收缩层应包含 rect 元素');
+
+  // 应使用 conv 类型的颜色
+  assertEqual(svg.includes('#e8f4f8'), true, '应使用 conv 填充色');
+  assertEqual(svg.includes('#5ba5d9'), true, '应使用 conv 边框色');
+
+  // 应包含圆角
+  assertEqual(svg.includes('rx="4.8"'), true, '应包含圆角属性');
+});
+
+test('生成含收缩层的 block SVG', function() {
+  const block = {
+    name: 'TestBlock',
+    type: 'parallel',
+    expand: 'collapsed',
+    collapsed: true,
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 80,
+    titleY: 30,
+    layers: [
+      { name: 'l1', type: 'conv', x: 15, y: 40, width: 50, height: 30, collapsed: true },
+      { name: 'l2', type: 'pool', x: 77, y: 40, width: 50, height: 30, collapsed: true }
+    ],
+    forkPoint: { x: 50, y: 35 },
+    mergePoint: { x: 50, y: 75 }
+  };
+
+  const svg = generateBlock(block);
+
+  // 应包含 block 标题
+  assertEqual(svg.includes('TestBlock'), true, '应包含 block 名称');
+
+  // 收缩层不应包含层名作为文本内容
+  assertEqual(!svg.includes('>l1<') && !svg.includes('>l2<'), true, '收缩层不应包含层名作为文本内容');
+
+  // 应包含虚线边框
+  assertEqual(svg.includes('stroke-dasharray'), true, '应包含虚线边框');
+
+  // 应包含 rect 元素
+  assertEqual(svg.includes('<rect'), true, '应包含 rect 元素');
+});

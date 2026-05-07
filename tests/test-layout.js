@@ -612,3 +612,74 @@ test('计算含 blocks 的完整网络布局', function() {
   const outputLayer = layout.layers.find(l => l.name === 'Output');
   assertEqual(blockX > inputLayer.x, true, 'block 在 Input 之后');
 });
+
+// === Collapsed Block Layout 测试 ===
+
+test('计算 collapsed parallel block 布局', function() {
+  const block = {
+    name: 'CollapsedInception',
+    type: 'parallel',
+    expand: 'collapsed',
+    branches: [
+      { id: 'b1', name: '1x1', type: 'conv', kernel: 1, channels: 64 },
+      { id: 'b2', name: '3x3', type: 'conv', kernel: 3, channels: 128 },
+      { id: 'b3', name: 'pool', type: 'pool', kernel: 3 }
+    ],
+    merge: 'concat'
+  };
+
+  const layout = calculateBlockLayout(block, 100, 50, 'horizontal');
+
+  assertEqual(layout.collapsed, true, 'Should have collapsed flag');
+  assertEqual(layout.layers.length, 3, 'Collapsed parallel block should have 3 layers');
+  assertEqual(layout.layers[0].width, COLLAPSED_CONFIG.layerWidth, 'Collapsed layer width should match COLLAPSED_CONFIG');
+  assertEqual(layout.layers[0].height, COLLAPSED_CONFIG.layerHeight, 'Collapsed layer height should match COLLAPSED_CONFIG');
+  assertEqual(layout.layers[0].collapsed, true, 'Layers should have collapsed flag');
+});
+
+test('计算 collapsed residual block 布局', function() {
+  const block = {
+    name: 'CollapsedResBlock',
+    type: 'residual',
+    expand: 'collapsed',
+    style: 'arc',
+    main: [
+      { name: 'conv1', type: 'conv', kernel: 3, channels: 64 },
+      { name: 'conv2', type: 'conv', kernel: 3, channels: 64 }
+    ],
+    skip: 'identity',
+    merge: 'add'
+  };
+
+  const layout = calculateBlockLayout(block, 100, 50, 'horizontal');
+
+  assertEqual(layout.collapsed, true, 'Should have collapsed flag');
+  assertEqual(layout.layers.length, 2, 'Collapsed residual block should have 2 main layers');
+  assertEqual(layout.layers[0].width, COLLAPSED_CONFIG.layerWidth, 'Collapsed layer width should match COLLAPSED_CONFIG');
+  assertEqual(layout.layers[0].height, COLLAPSED_CONFIG.layerHeight, 'Collapsed layer height should match COLLAPSED_CONFIG');
+  assertEqual(layout.layers[0].collapsed, true, 'Layers should have collapsed flag');
+  assertEqual(layout.skipConnection.type, 'arc', 'Should have arc skip connection');
+});
+
+test('计算 collapsed stack block 布局', function() {
+  const block = {
+    name: 'CollapsedEncoderStack',
+    type: 'stack',
+    expand: 'collapsed',
+    repeat: 6,
+    layers: [
+      { name: 'attn', type: 'attention', heads: 8 },
+      { name: 'ff', type: 'fc', size: 2048 }
+    ]
+  };
+
+  const layout = calculateBlockLayout(block, 100, 50, 'horizontal');
+
+  assertEqual(layout.collapsed, true, 'Should have collapsed flag');
+  assertEqual(layout.layers.length, 2, 'Collapsed stack block should show layers once');
+  assertEqual(layout.layers[0].width, COLLAPSED_CONFIG.layerWidth, 'Collapsed layer width should match COLLAPSED_CONFIG');
+  assertEqual(layout.layers[0].height, COLLAPSED_CONFIG.layerHeight, 'Collapsed layer height should match COLLAPSED_CONFIG');
+  assertEqual(layout.layers[0].collapsed, true, 'Layers should have collapsed flag');
+  assertEqual(layout.repeatMarker !== undefined, true, 'Should have repeat marker');
+  assertEqual(layout.repeatMarker.count, 6, 'Repeat marker should show count 6');
+});

@@ -50,6 +50,7 @@ globalThis.getTemplate = templates.getTemplate;
 const layout = require('../src/layout.js');
 globalThis.calculateLayout = layout.calculateLayout;
 globalThis.LAYOUT_CONFIG = layout.LAYOUT_CONFIG;
+globalThis.COLLAPSED_CONFIG = layout.COLLAPSED_CONFIG;
 globalThis.calculateBlockLayout = layout.calculateBlockLayout;
 
 // 加载 svg-generator.js
@@ -59,6 +60,7 @@ globalThis.generateDefs = svgGenerator.generateDefs;
 globalThis.generateTitle = svgGenerator.generateTitle;
 globalThis.generateSection = svgGenerator.generateSection;
 globalThis.generateLayer = svgGenerator.generateLayer;
+globalThis.generateCollapsedLayer = svgGenerator.generateCollapsedLayer;
 globalThis.generateLayerContent = svgGenerator.generateLayerContent;
 globalThis.generateConnection = svgGenerator.generateConnection;
 globalThis.generateBlockConnection = svgGenerator.generateBlockConnection;
