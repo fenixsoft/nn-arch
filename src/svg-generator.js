@@ -556,20 +556,38 @@ function generateParallelConnections(block) {
  */
 function generateSkipConnection(block) {
   const parts = [];
+  const skip = block.skipConnection;
 
-  // 弧形样式：在块上方绘制弧形
-  if (block.skipStyle === 'arc' && block.skipArc) {
-    const arc = block.skipArc;
-    const dx = arc.x2 - arc.x1;
-    const dr = Math.abs(dx);
-    // 使用二次贝塞尔曲线绘制弧形
-    parts.push(`<path d="M${arc.x1} ${arc.y1} Q${(arc.x1 + arc.x2) / 2} ${arc.midY} ${arc.x2} ${arc.y2}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+  if (!skip) {
+    // Legacy format: check for skipArc/skipLine
+    if (block.skipStyle === 'arc' && block.skipArc) {
+      const arc = block.skipArc;
+      parts.push(`<path d="M${arc.x1} ${arc.y1} Q${(arc.x1 + arc.x2) / 2} ${arc.midY} ${arc.x2} ${arc.y2}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+    }
+    if (block.skipStyle === 'parallel' && block.skipLine) {
+      const line = block.skipLine;
+      parts.push(`<path d="M${line.x1} ${line.y1} L${line.x2} ${line.y2}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+    }
+    return parts.join('\n');
   }
 
-  // 平行样式：在块下方绘制直线
-  if (block.skipStyle === 'parallel' && block.skipLine) {
-    const line = block.skipLine;
-    parts.push(`<path d="M${line.x1} ${line.y1} L${line.x2} ${line.y2}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+  // New format: use skipConnection from layout
+  const strokeWidth = SVG_CONFIG.arrowWidth;
+
+  if (skip.type === 'arc') {
+    // 水平布局的弧形：从第一层顶部绕到最后一层顶部
+    const midY = skip.startY - skip.radius;
+    parts.push(`<path d="M${skip.startX} ${skip.startY} Q${(skip.startX + skip.endX) / 2} ${midY} ${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+  } else if (skip.type === 'arc-vertical') {
+    // 垂直布局的弧形：从第一层左侧绕到最后一层左侧
+    const midX = skip.startX - skip.radius;
+    parts.push(`<path d="M${skip.startX} ${skip.startY} Q${midX} ${(skip.startY + skip.endY) / 2} ${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+  } else if (skip.type === 'parallel') {
+    // 平行样式：直线
+    parts.push(`<path d="M${skip.startX} ${skip.startY} L${skip.endX} ${skip.startY} L${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+  } else if (skip.type === 'parallel-vertical') {
+    // 垂直布局的平行样式
+    parts.push(`<path d="M${skip.startX} ${skip.startY} L${skip.endX} ${skip.startY} L${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
   }
 
   return parts.join('\n');
