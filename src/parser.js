@@ -184,7 +184,8 @@ function normalizeSection(section, layers) {
  * @returns {object} 标准化后的块定义
  */
 function normalizeBlock(block) {
-  return {
+  // 基本block属性
+  const normalized = {
     id: block.id || block.name,  // 保留 id 属性，若无则使用 name 作为默认值
     name: block.name,
     type: block.type,
@@ -204,6 +205,22 @@ function normalizeBlock(block) {
     style: block.style || 'arc',
     expand: block.expand || false
   };
+
+  // 对于简单层类型的block（如pool, conv, fc），保留所有原始层属性
+  // 这些属性不在标准block结构中，但需要保留用于渲染
+  if (block.type && !['parallel', 'residual', 'stack'].includes(block.type)) {
+    // 保留kernel, stride, size, channels, out等层属性
+    if (block.kernel !== undefined) normalized.kernel = block.kernel;
+    if (block.stride !== undefined) normalized.stride = block.stride;
+    if (block.size !== undefined) normalized.size = block.size;
+    if (block.channels !== undefined) normalized.channels = block.channels;
+    if (block.out !== undefined) normalized.out = block.out;
+    if (block.pad !== undefined) normalized.pad = block.pad;
+    if (block.pool !== undefined) normalized.pool = block.pool;
+    if (block.dropout !== undefined) normalized.dropout = block.dropout;
+  }
+
+  return normalized;
 }
 
 /**
