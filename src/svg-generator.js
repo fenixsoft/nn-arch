@@ -599,12 +599,7 @@ function generateSkipConnection(block) {
   if (skip.type === 'arc') {
     // 水平布局的弧形：从第一层顶部绕到最后一层顶部
     const midY = skip.startY - skip.radius;
-    // 绘制弧线 + 在中点添加"残差连接"标签
-    const midX = (skip.startX + skip.endX) / 2;
-    parts.push(`<path d="M${skip.startX} ${skip.startY} Q${midX} ${midY} ${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
-    // 在弧线中点上方添加标签
-    const labelY = midY - 5;
-    parts.push(`<text x="${midX}" y="${labelY}" text-anchor="middle" font-size="10" font-family="Arial, sans-serif" fill="#666">残差连接</text>`);
+    parts.push(`<path d="M${skip.startX} ${skip.startY} Q${(skip.startX + skip.endX) / 2} ${midY} ${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
   } else if (skip.type === 'arc-vertical') {
     // 垂直布局的弧形：从第一层左侧绕到最后一层左侧
     const midX = skip.startX - skip.radius;
@@ -612,25 +607,23 @@ function generateSkipConnection(block) {
   } else if (skip.type === 'parallel') {
     // 平行样式：直线（无 skip 层，纯 identity shortcut）
     parts.push(`<path d="M${skip.startX} ${skip.startY} L${skip.endX} ${skip.startY} L${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
-    // 在连线中点添加"残差连接"标签
-    const midX = (skip.startX + skip.endX) / 2;
-    const midY = skip.startY;
-    parts.push(`<text x="${midX}" y="${midY - 5}" text-anchor="middle" font-size="10" font-family="Arial, sans-serif" fill="#666">残差连接</text>`);
   } else if (skip.type === 'parallel-with-layers') {
-    // 平行样式 + skip 层：从入口分叉到 skip 层入口，再从 skip 层出口汇聚到出口
-    // 1. 从入口向下到分叉点
-    const forkY = skip.startY + strokeWidth * 2;
-    parts.push(`<path d="M${skip.startX} ${skip.startY} L${skip.startX} ${forkY}" stroke="#999" stroke-width="${strokeWidth}" fill="none"/>`);
-    // 2. 从分叉点水平到 skip 层入口（上方）
-    const skipCenterX = skip.startX + 60; // skip 层的中心位置
-    parts.push(`<path d="M${skip.startX} ${forkY} L${skipCenterX} ${forkY} L${skipCenterX} ${skip.skipLayerStartY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
-    // 3. 从 skip 层出口向下再水平到出口
-    const mergeY = skip.skipLayerEndY + strokeWidth * 2;
-    parts.push(`<path d="M${skipCenterX} ${skip.skipLayerEndY} L${skipCenterX} ${mergeY} L${skip.endX} ${mergeY} L${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
-    // 在 skip 连接线中点添加"残差连接"标签
-    const labelX = skipCenterX;
-    const labelY = forkY + 10;
-    parts.push(`<text x="${labelX}" y="${labelY}" text-anchor="middle" font-size="10" font-family="Arial, sans-serif" fill="#666">残差连接</text>`);
+    // 平行样式 + skip 层：从 block 入口分叉到 skip 层，再从 skip 层到 block 出口
+    // forkX/forkY = block 入口分叉点
+    // mergeX/mergeY = block 出口汇聚点
+    // skipCenterX = skip 层中心，skipLayerStartY/EndY = skip 层顶/底
+
+    const forkX = skip.forkX;
+    const forkY = skip.forkY;
+    const mergeX = skip.mergeX;
+    const mergeY = skip.mergeY;
+    const skipCenterX = skip.skipCenterX;
+
+    // 1. 从 fork 点向下到 skip 层入口
+    parts.push(`<path d="M${forkX} ${forkY} L${skipCenterX} ${forkY} L${skipCenterX} ${skip.skipLayerStartY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
+
+    // 2. 从 skip 层出口向上到 merge 点
+    parts.push(`<path d="M${skipCenterX} ${skip.skipLayerEndY} L${skipCenterX} ${mergeY} L${mergeX} ${mergeY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
   } else if (skip.type === 'parallel-vertical') {
     // 垂直布局的平行样式
     parts.push(`<path d="M${skip.startX} ${skip.startY} L${skip.endX} ${skip.startY} L${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);

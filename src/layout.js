@@ -682,13 +682,19 @@ function calculateBlockConnections(layerGroups) {
     const lastInitialLayer = initialLayersFiltered[initialLayersFiltered.length - 1];
     const firstBlock = layerGroups.blocks[0];
 
+    // 对于残差块，连接到主路径入口位置（而不是 block 中心）
+    let y2 = firstBlock.y + firstBlock.height / 2;
+    if (firstBlock.type === 'residual' && firstBlock.skipConnection) {
+      y2 = firstBlock.skipConnection.forkY;
+    }
+
     connections.push({
       from: lastInitialLayer.name,
       to: firstBlock.name,
       x1: lastInitialLayer.x + lastInitialLayer.width,
       y1: lastInitialLayer.y + lastInitialLayer.height / 2,
       x2: firstBlock.x,
-      y2: firstBlock.y + firstBlock.height / 2,
+      y2: y2,
       type: 'block-entry'
     });
   }
@@ -698,13 +704,23 @@ function calculateBlockConnections(layerGroups) {
     const fromBlock = layerGroups.blocks[i];
     const toBlock = layerGroups.blocks[i + 1];
 
+    // 对于残差块，连接从主路径出口/入口位置
+    let y1 = fromBlock.y + fromBlock.height / 2;
+    let y2 = toBlock.y + toBlock.height / 2;
+    if (fromBlock.type === 'residual' && fromBlock.skipConnection) {
+      y1 = fromBlock.skipConnection.mergeY;
+    }
+    if (toBlock.type === 'residual' && toBlock.skipConnection) {
+      y2 = toBlock.skipConnection.forkY;
+    }
+
     connections.push({
       from: fromBlock.name,
       to: toBlock.name,
       x1: fromBlock.x + fromBlock.width,
-      y1: fromBlock.y + fromBlock.height / 2,
+      y1: y1,
       x2: toBlock.x,
-      y2: toBlock.y + toBlock.height / 2,
+      y2: y2,
       type: 'block-to-block'
     });
   }
@@ -714,11 +730,17 @@ function calculateBlockConnections(layerGroups) {
     const lastBlock = layerGroups.blocks[layerGroups.blocks.length - 1];
     const firstAfterLayer = afterBlocksFiltered[0];
 
+    // 对于残差块，连接从主路径出口位置
+    let y1 = lastBlock.y + lastBlock.height / 2;
+    if (lastBlock.type === 'residual' && lastBlock.skipConnection) {
+      y1 = lastBlock.skipConnection.mergeY;
+    }
+
     connections.push({
       from: lastBlock.name,
       to: firstAfterLayer.name,
       x1: lastBlock.x + lastBlock.width,
-      y1: lastBlock.y + lastBlock.height / 2,
+      y1: y1,
       x2: firstAfterLayer.x,
       y2: firstAfterLayer.y + firstAfterLayer.height / 2,
       type: 'block-exit'
@@ -1278,7 +1300,9 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
         currentX += layerWidth + layerGap;
       });
 
-      // skip 路径（如果有的话）
+      // skip 路径（如果有的话）- 独立的并行路径，从 block 入口到 block 出口
+      // skip 层在主路径下方，x 坐标从 mainStartX 开始（和 Conv1 共享输入点）
+      // 但 skip 层数量可能和主路径不同，所以需要单独计算宽度
       let skipX = mainStartX;
       if (hasSkipLayers) {
         const skipStartY = mainStartY + layerHeight + config.branchGap;
@@ -1318,27 +1342,40 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
       );
 
       // skip connection（parallel 样式）
-      // 如果有 skip 层，连接线从 block 入口到 skip 层入口，再从 skip 层出口到 block 出口
+      // 如果有 skip 层，连接线从 block 入口分叉到 skip 层，再从 skip 层到 block 出口
       if (hasSkipLayers) {
         const skipLayer = layout.layers.find(l => l.path === 'skip');
         const lastSkipLayer = [...layout.layers].reverse().find(l => l.path === 'skip');
         const firstMainLayer = layout.layers.find(l => l.path === 'main');
         const lastMainLayer = [...layout.layers].reverse().find(l => l.path === 'main');
 
+        // skip 层的中心位置
+        const skipCenterX = skipLayer.x + layerWidth / 2;
+
+        // block 入口/出口位置
+        // block 入口在 block 左边缘（startX），出口在 Conv2 右边
+        const blockEntryX = startX;  // block 左边缘（306）
+        const blockExitX = lastMainLayer.x + layerWidth;  // Conv2 右边（792）
+        const mainCenterY = mainStartY + layerHeight / 2;  // 主路径中心 y
+
         layout.skipConnection = {
           type: 'parallel-with-layers',
-          startX: mainStartX,
-          startY: startY + titleHeight,
-          skipLayerStartY: skipLayer.y,
-          skipLayerEndY: lastSkipLayer.y + layerHeight,
-          endX: maxEndX,
-          endY: lastMainLayer.y + layerHeight / 2
+          forkX: blockEntryX,  // block 入口（左边缘）
+          forkY: mainCenterY,  // 主路径中心 y
+          skipCenterX: skipCenterX,  // skip 层中心
+          skipLayerStartY: skipLayer.y,  // skip 层入口 y
+          skipLayerEndY: lastSkipLayer.y + layerHeight,  // skip 层出口 y
+          mergeX: blockExitX,  // block 出口
+          mergeY: mainCenterY  // 主路径中心 y
         };
       } else {
+        // identity shortcut：skip 连线从 block 入口上方直接到出口上方
+        const firstMainLayer = layout.layers.find(l => l.path === 'main');
+        const lastMainLayer = [...layout.layers].reverse().find(l => l.path === 'main');
         layout.skipConnection = {
           type: 'parallel',
-          startX: mainStartX,
-          endX: maxEndX,
+          startX: firstMainLayer.x + layerWidth / 2,
+          endX: lastMainLayer.x + layerWidth / 2,
           startY: startY + titleHeight,
           endY: mainStartY + layerHeight
         };
