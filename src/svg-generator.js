@@ -617,14 +617,19 @@ function generateResidualConnections(block) {
     return `<path d="M${connData.from.x} ${connData.from.y} L${connData.to.x} ${connData.to.y}" stroke="#999" stroke-width="${strokeWidth}" fill="none"${arrow}/>`;
   }
 
-  // Skip connection（折线）
+  // Skip connection（折线，用于 arc 样式的 identity shortcut）
   if (conn.skip) {
     parts.push(generatePolyline(conn.skip, true));
   }
 
-  // 入口分叉（折线）
+  // 入口分叉到 Conv1（折线）
   if (conn.entryToConv1) {
     parts.push(generatePolyline(conn.entryToConv1, true));
+  }
+
+  // 入口分叉到 Skip（折线，用于 parallel 样式的 projection shortcut）
+  if (conn.entryToSkip) {
+    parts.push(generatePolyline(conn.entryToSkip, true));
   }
 
   // 主路径（直线）
@@ -632,9 +637,14 @@ function generateResidualConnections(block) {
     parts.push(generateLine(conn.conv1ToConv2, true));
   }
 
-  // 出口汇聚（折线）
+  // Conv2 出口汇聚（折线）
   if (conn.conv2ToExit) {
     parts.push(generatePolyline(conn.conv2ToExit, true));
+  }
+
+  // Skip 出口汇聚（折线，用于 parallel 样式的 projection shortcut）
+  if (conn.skipToExit) {
+    parts.push(generatePolyline(conn.skipToExit, true));
   }
 
   return parts.join('\n');

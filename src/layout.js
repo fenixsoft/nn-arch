@@ -1324,22 +1324,22 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
         layout.height = titleHeight + arcRadius + layerHeight + padding;
       }
 
+      // Block 边缘中心
+      const blockLeftX = startX;
+      const blockRightX = startX + layout.width;
+      const blockCenterY = startY + layout.height / 2;
+
       // 主路径内部连接（Conv1 右边 → Conv2 左边）
       layout.connections = calculateConnections(
         layout.layers.filter(l => l.path === 'main')
       );
 
-      // 残差块的所有连接（按用户描述的方式）
+      // 残差块的所有连接（使用 polyline 格式）
       if (hasSkipLayers) {
         const firstMainLayer = layout.layers.find(l => l.path === 'main');
         const lastMainLayer = [...layout.layers].reverse().find(l => l.path === 'main');
         const skipLayer = layout.layers.find(l => l.path === 'skip');
         const lastSkipLayer = [...layout.layers].reverse().find(l => l.path === 'skip');
-
-        // block 入口/出口：容器边缘的中心
-        const blockEntryX = startX;  // block 左边缘
-        const blockExitX = startX + layout.width;  // block 右边缘
-        const blockCenterY = startY + layout.height / 2;  // 容器中心 y
 
         // 各层的位置信息
         const conv1LeftX = firstMainLayer.x;
@@ -1355,28 +1355,47 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
         const skipRightX = lastSkipLayer.x + layerWidth;
 
         layout.residualConnections = {
-          // 入口分叉：block 左边缘中心 → Conv1/Skip 左边中点
-          forkToConv1: {
-            from: { x: blockEntryX, y: blockCenterY },
-            to: { x: conv1LeftX, y: conv1CenterY }
+          // 入口分叉到 Conv1：block 左边缘中心 → 向上折线到 Conv1 左中点
+          entryToConv1: {
+            type: 'polyline',
+            points: [
+              { x: blockLeftX, y: blockCenterY },  // 起点（左边缘中心）
+              { x: blockLeftX, y: conv1CenterY },  // 向上到 Conv1 中心 y
+              { x: conv1LeftX, y: conv1CenterY }   // 水平到 Conv1 左边
+            ]
           },
-          forkToSkip: {
-            from: { x: blockEntryX, y: blockCenterY },
-            to: { x: skipLeftX, y: skipCenterY }
+          // 入口分叉到 Skip：block 左边缘中心 → 向下折线到 Skip 左中点
+          entryToSkip: {
+            type: 'polyline',
+            points: [
+              { x: blockLeftX, y: blockCenterY },  // 起点（左边缘中心）
+              { x: blockLeftX, y: skipCenterY },   // 向下到 Skip 中心 y
+              { x: skipLeftX, y: skipCenterY }     // 水平到 Skip 左边
+            ]
           },
-          // 主路径连接：Conv1 右边中点 → Conv2 左边中点（直线，已在 connections 中）
+          // 主路径：Conv1 右中点 → Conv2 左中点（直线）
           conv1ToConv2: {
+            type: 'line',
             from: { x: conv1RightX, y: conv1CenterY },
             to: { x: conv2LeftX, y: conv2CenterY }
           },
-          // 出口汇聚：Conv2/Skip 右边中点 → block 右边缘中心
+          // 出口汇聚：Conv2 右中点 → 向上折线到 block 右边缘中心
           conv2ToExit: {
-            from: { x: conv2RightX, y: conv2CenterY },
-            to: { x: blockExitX, y: blockCenterY }
+            type: 'polyline',
+            points: [
+              { x: conv2RightX, y: conv2CenterY }, // 起点（Conv2 右边）
+              { x: conv2RightX, y: blockCenterY }, // 向上到 block 中心 y
+              { x: blockRightX, y: blockCenterY }  // 水平到 block 右边缘
+            ]
           },
+          // Skip 出口汇聚：Skip 右中点 → 向上折线到 block 右边缘中心
           skipToExit: {
-            from: { x: skipRightX, y: skipCenterY },
-            to: { x: blockExitX, y: blockCenterY }
+            type: 'polyline',
+            points: [
+              { x: skipRightX, y: skipCenterY },   // 起点（Skip 右边）
+              { x: skipRightX, y: blockCenterY },  // 向上到 block 中心 y
+              { x: blockRightX, y: blockCenterY }  // 水平到 block 右边缘
+            ]
           }
         };
       } else {
