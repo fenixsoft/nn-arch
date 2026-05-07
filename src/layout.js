@@ -1341,7 +1341,7 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
           y1: from.y + layerHeight / 2,
           x2: to.x,
           y2: to.y + layerHeight / 2,
-          type: 'block-internal'
+          type: 'sequential'
         });
       }
 
@@ -1463,7 +1463,7 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
           y1: from.y + layerHeight / 2,
           x2: to.x,
           y2: to.y + layerHeight / 2,
-          type: 'block-internal'
+          type: 'sequential'
         });
       }
 
