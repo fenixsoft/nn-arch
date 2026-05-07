@@ -933,17 +933,19 @@ function calculateParallelBlockLayout(block, layout, startX, startY, direction =
  * vertical 方向：主路径垂直排列
  */
 function calculateResidualBlockLayout(block, layout, startX, startY, direction = 'horizontal') {
-  const layerWidth = LAYOUT_CONFIG.layerWidth;
-  const layerHeight = LAYOUT_CONFIG.layerHeight;
-  const layerGap = LAYOUT_CONFIG.layerGap;
-  const padding = LAYOUT_CONFIG.blockPadding;
-  const arcRadius = LAYOUT_CONFIG.arcRadius;
+  // Select config based on collapsed mode
+  const config = layout.collapsed ? COLLAPSED_CONFIG : LAYOUT_CONFIG;
+  const layerWidth = config.layerWidth;
+  const layerHeight = config.layerHeight;
+  const layerGap = config.layerGap;
+  const padding = config.blockPadding;
+  const arcRadius = layout.collapsed ? COLLAPSED_CONFIG.layerHeight : LAYOUT_CONFIG.arcRadius;
 
   const mainLayers = block.main || [];
   if (mainLayers.length === 0) return;
 
-  // 标题区域高度/宽度
-  const titleHeight = LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.blockTitleGap;
+  // Calculate title height with collapsed-aware gap
+  const titleHeight = LAYOUT_CONFIG.fontSizeSection + (layout.collapsed ? COLLAPSED_CONFIG.titleGap : LAYOUT_CONFIG.blockTitleGap);
   const titleWidth = LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.blockTitleGap;
 
   if (direction === 'vertical') {
@@ -968,7 +970,8 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
           width: layerWidth,
           height: layerHeight,
           data: layer,
-          path: 'main'
+          path: 'main',
+          collapsed: layout.collapsed
         });
         currentY += layerHeight + layerGap;
       });
@@ -976,7 +979,7 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
       // skip 路径（右侧）
       let skipY = mainStartY;
       if (hasSkipLayers) {
-        const skipStartX = mainStartX + layerWidth + LAYOUT_CONFIG.branchGap;
+        const skipStartX = mainStartX + layerWidth + config.branchGap;
 
         skipLayers.forEach((layer, index) => {
           layout.layers.push({
@@ -987,7 +990,8 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
             width: layerWidth,
             height: layerHeight,
             data: layer,
-            path: 'skip'
+            path: 'skip',
+            collapsed: layout.collapsed
           });
           skipY += layerHeight + layerGap;
         });
@@ -999,7 +1003,7 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
       const maxEndY = Math.max(mainEndY, skipEndY);
       layout.height = maxEndY + padding - startY;
       layout.width = hasSkipLayers
-        ? titleWidth + layerWidth * 2 + LAYOUT_CONFIG.branchGap + padding
+        ? titleWidth + layerWidth * 2 + config.branchGap + padding
         : titleWidth + layerWidth + padding;
 
       // 主路径连接（垂直）
@@ -1030,7 +1034,8 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
           y: currentY,
           width: layerWidth,
           height: layerHeight,
-          data: layer
+          data: layer,
+          collapsed: layout.collapsed
         });
         currentY += layerHeight + layerGap;
       });
@@ -1080,7 +1085,8 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
           width: layerWidth,
           height: layerHeight,
           data: layer,
-          path: 'main'
+          path: 'main',
+          collapsed: layout.collapsed
         });
         currentX += layerWidth + layerGap;
       });
@@ -1088,7 +1094,7 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
       // skip 路径（如果有的话）
       let skipX = mainStartX;
       if (hasSkipLayers) {
-        const skipStartY = mainStartY + layerHeight + LAYOUT_CONFIG.branchGap;
+        const skipStartY = mainStartY + layerHeight + config.branchGap;
 
         skipLayers.forEach((layer, index) => {
           layout.layers.push({
@@ -1099,7 +1105,8 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
             width: layerWidth,
             height: layerHeight,
             data: layer,
-            path: 'skip'
+            path: 'skip',
+            collapsed: layout.collapsed
           });
           skipX += layerWidth + layerGap;
         });
@@ -1142,7 +1149,8 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
           y: mainStartY,
           width: layerWidth,
           height: layerHeight,
-          data: layer
+          data: layer,
+          collapsed: layout.collapsed
         });
         currentX += layerWidth + layerGap;
       });
