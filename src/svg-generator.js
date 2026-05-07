@@ -608,22 +608,21 @@ function generateSkipConnection(block) {
     // 平行样式：直线（无 skip 层，纯 identity shortcut）
     parts.push(`<path d="M${skip.startX} ${skip.startY} L${skip.endX} ${skip.startY} L${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
   } else if (skip.type === 'parallel-with-layers') {
-    // 平行样式 + skip 层：从 block 入口分叉到 skip 层，再从 skip 层到 block 出口
-    // forkX/forkY = block 入口分叉点
-    // mergeX/mergeY = block 出口汇聚点
-    // skipCenterX = skip 层中心，skipLayerStartY/EndY = skip 层顶/底
+    // 平行样式 + skip 层：路径绕过主路径层，不穿过 Conv
+    // 1. 从 block 入口中心向下到 skip 层入口高度，然后水平到 skip 层
+    // 2. 从 skip 层出口水平到 block 出口，然后向上到 block 出口中心
 
     const forkX = skip.forkX;
-    const forkY = skip.forkY;
+    const forkY = skip.forkY;  // block 入口中心
     const mergeX = skip.mergeX;
-    const mergeY = skip.mergeY;
+    const mergeY = skip.mergeY;  // block 出口中心
     const skipCenterX = skip.skipCenterX;
 
-    // 1. 从 fork 点向下到 skip 层入口
-    parts.push(`<path d="M${forkX} ${forkY} L${skipCenterX} ${forkY} L${skipCenterX} ${skip.skipLayerStartY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
+    // 1. 从 block 入口中心向下到 skip 层入口 y，然后水平到 skip 层中心
+    parts.push(`<path d="M${forkX} ${forkY} L${forkX} ${skip.skipLayerStartY} L${skipCenterX} ${skip.skipLayerStartY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
 
-    // 2. 从 skip 层出口向上到 merge 点
-    parts.push(`<path d="M${skipCenterX} ${skip.skipLayerEndY} L${skipCenterX} ${mergeY} L${mergeX} ${mergeY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
+    // 2. 从 skip 层出口水平到 block 出口 x，然后向上到 block 出口中心
+    parts.push(`<path d="M${skipCenterX} ${skip.skipLayerEndY} L${mergeX} ${skip.skipLayerEndY} L${mergeX} ${mergeY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
   } else if (skip.type === 'parallel-vertical') {
     // 垂直布局的平行样式
     parts.push(`<path d="M${skip.startX} ${skip.startY} L${skip.endX} ${skip.startY} L${skip.endX} ${skip.endY}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);

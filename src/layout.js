@@ -682,11 +682,8 @@ function calculateBlockConnections(layerGroups) {
     const lastInitialLayer = initialLayersFiltered[initialLayersFiltered.length - 1];
     const firstBlock = layerGroups.blocks[0];
 
-    // 对于残差块，连接到主路径入口位置（而不是 block 中心）
-    let y2 = firstBlock.y + firstBlock.height / 2;
-    if (firstBlock.type === 'residual' && firstBlock.skipConnection) {
-      y2 = firstBlock.skipConnection.forkY;
-    }
+    // 连接到 block 容器边缘中心
+    const y2 = firstBlock.y + firstBlock.height / 2;
 
     connections.push({
       from: lastInitialLayer.name,
@@ -704,15 +701,9 @@ function calculateBlockConnections(layerGroups) {
     const fromBlock = layerGroups.blocks[i];
     const toBlock = layerGroups.blocks[i + 1];
 
-    // 对于残差块，连接从主路径出口/入口位置
-    let y1 = fromBlock.y + fromBlock.height / 2;
-    let y2 = toBlock.y + toBlock.height / 2;
-    if (fromBlock.type === 'residual' && fromBlock.skipConnection) {
-      y1 = fromBlock.skipConnection.mergeY;
-    }
-    if (toBlock.type === 'residual' && toBlock.skipConnection) {
-      y2 = toBlock.skipConnection.forkY;
-    }
+    // 连接从/到 block 容器边缘中心
+    const y1 = fromBlock.y + fromBlock.height / 2;
+    const y2 = toBlock.y + toBlock.height / 2;
 
     connections.push({
       from: fromBlock.name,
@@ -730,11 +721,8 @@ function calculateBlockConnections(layerGroups) {
     const lastBlock = layerGroups.blocks[layerGroups.blocks.length - 1];
     const firstAfterLayer = afterBlocksFiltered[0];
 
-    // 对于残差块，连接从主路径出口位置
-    let y1 = lastBlock.y + lastBlock.height / 2;
-    if (lastBlock.type === 'residual' && lastBlock.skipConnection) {
-      y1 = lastBlock.skipConnection.mergeY;
-    }
+    // 连接从 block 容器边缘中心
+    const y1 = lastBlock.y + lastBlock.height / 2;
 
     connections.push({
       from: lastBlock.name,
@@ -1342,31 +1330,28 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
       );
 
       // skip connection（parallel 样式）
-      // 如果有 skip 层，连接线从 block 入口分叉到 skip 层，再从 skip 层到 block 出口
+      // 如果有 skip 层，连接线从 block 入口向下到 skip 层，再从 skip 层向上到 block 出口
       if (hasSkipLayers) {
         const skipLayer = layout.layers.find(l => l.path === 'skip');
         const lastSkipLayer = [...layout.layers].reverse().find(l => l.path === 'skip');
-        const firstMainLayer = layout.layers.find(l => l.path === 'main');
-        const lastMainLayer = [...layout.layers].reverse().find(l => l.path === 'main');
 
         // skip 层的中心位置
         const skipCenterX = skipLayer.x + layerWidth / 2;
 
-        // block 入口/出口位置
-        // block 入口在 block 左边缘（startX），出口在 Conv2 右边
-        const blockEntryX = startX;  // block 左边缘（306）
-        const blockExitX = lastMainLayer.x + layerWidth;  // Conv2 右边（792）
-        const mainCenterY = mainStartY + layerHeight / 2;  // 主路径中心 y
+        // block 入口/出口位置：容器边缘的中心
+        const blockEntryX = startX;  // block 左边缘
+        const blockExitX = startX + layout.width;  // block 右边缘
+        const blockCenterY = startY + layout.height / 2;  // 容器中心 y
 
         layout.skipConnection = {
           type: 'parallel-with-layers',
-          forkX: blockEntryX,  // block 入口（左边缘）
-          forkY: mainCenterY,  // 主路径中心 y
+          forkX: blockEntryX,  // block 左边缘
+          forkY: blockCenterY,  // block 中心 y
           skipCenterX: skipCenterX,  // skip 层中心
           skipLayerStartY: skipLayer.y,  // skip 层入口 y
           skipLayerEndY: lastSkipLayer.y + layerHeight,  // skip 层出口 y
-          mergeX: blockExitX,  // block 出口
-          mergeY: mainCenterY  // 主路径中心 y
+          mergeX: blockExitX,  // block 右边缘
+          mergeY: blockCenterY  // block 中心 y
         };
       } else {
         // identity shortcut：skip 连线从 block 入口上方直接到出口上方
