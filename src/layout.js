@@ -236,8 +236,8 @@ function calculateSectionsLayout(network, layout) {
 
     // 将层和 blocks 分配到多行（每行最多 maxLayersPerRow 个元素）
     sectionLayerIds.forEach((elementId, idx) => {
-      // 先检查是否是 block
-      const blockData = network.blocks ? network.blocks.find(b => b.name === elementId) : null;
+      // 先检查是否是 block（同时检查 id 和 name）
+      const blockData = network.blocks ? network.blocks.find(b => b.name === elementId || b.id === elementId) : null;
 
       if (blockData) {
         // 这是一个 block
@@ -359,45 +359,38 @@ function calculateSectionsLayout(network, layout) {
   });
 
   // 计算行间连接（折线：从上一section底部到下一section顶部）
+  // 使用section边界作为连接端点，不依赖内部层的具体位置
+  // 这样可以正确处理包含blocks的section，并且连接不会穿透section内部
   for (let i = 0; i < layout.sections.length - 1; i++) {
     const currentSection = layout.sections[i];
     const nextSection = layout.sections[i + 1];
 
-    // 找到当前 section 的最后一层和下一个 section 的第一层
-    const currentSectionLayers = layout.layers.filter(l => l.sectionIndex === i);
-    const nextSectionLayers = layout.layers.filter(l => l.sectionIndex === i + 1);
+    // 从当前 section 底部中心出发
+    const fromX = currentSection.x + currentSection.width / 2;
+    const fromY = currentSection.y + currentSection.height;
 
-    if (currentSectionLayers.length > 0 && nextSectionLayers.length > 0) {
-      const fromLayer = currentSectionLayers[currentSectionLayers.length - 1];
-      const toLayer = nextSectionLayers[0];
+    // 到下一个 section 顶部中心
+    const toX = nextSection.x + nextSection.width / 2;
+    const toY = nextSection.y;
 
-      // 折线连接的关键点
-      const fromX = fromLayer.x + fromLayer.width / 2;
-      const fromY = fromLayer.y + fromLayer.height;
+    // 中间转折点
+    const midY = fromY + (toY - fromY) / 2;
 
-      // 下一个 section 顶部中心位置
-      const toX = nextSection.x + nextSection.width / 2;
-      const toY = nextSection.y;
+    // 从 section 定义或 network 获取标注
+    const rowLabel = network.sections[i].rowLabel || network.rowLabels[i] || '';
 
-      // 中间转折点
-      const midY = fromY + (toY - fromY) / 2;
-
-      // 从 section 定义或 network 获取标注
-      const rowLabel = network.sections[i].rowLabel || network.rowLabels[i] || '';
-
-      layout.rowConnections.push({
-        from: fromLayer.name,
-        to: toLayer.name,
-        fromX: fromX,
-        fromY: fromY,
-        midY: midY,
-        toX: toX,
-        toY: toY,
-        label: rowLabel,
-        labelX: Math.max(fromX, toX) + LAYOUT_CONFIG.layerGap,
-        labelY: midY
-      });
-    }
+    layout.rowConnections.push({
+      from: currentSection.name,
+      to: nextSection.name,
+      fromX: fromX,
+      fromY: fromY,
+      midY: midY,
+      toX: toX,
+      toY: toY,
+      label: rowLabel,
+      labelX: Math.max(fromX, toX) + LAYOUT_CONFIG.layerGap,
+      labelY: midY
+    });
   }
 
   // 计算总尺寸
@@ -541,6 +534,13 @@ function calculateConnections(layers, direction = 'horizontal') {
   for (let i = 0; i < connectableLayers.length - 1; i++) {
     const from = connectableLayers[i];
     const to = connectableLayers[i + 1];
+
+    // 跳过 block 内部的层（它们由 block 自己管理连接）
+    // block 内部层会有 branchIndex, path, repeatIndex 等属性
+    if (from.branchIndex !== undefined || from.path !== undefined || from.repeatIndex !== undefined ||
+        to.branchIndex !== undefined || to.path !== undefined || to.repeatIndex !== undefined) {
+      continue;
+    }
 
     // 只连接同一 section 内的层（sectionIndex 相同或都无 sectionIndex）
     if (from.sectionIndex !== undefined && to.sectionIndex !== undefined && from.sectionIndex !== to.sectionIndex) {
@@ -789,9 +789,45 @@ function calculateBlockLayout(block, startX, startY, direction = 'horizontal') {
       calculateStackBlockLayout(block, layout, startX, startY, direction);
       break;
     default:
-      // 未知类型，返回空布局
+      // 普通层类型（conv, pool, fc 等）作为单层 block 处理
+      // 不显示 block 容器标题，直接渲染层
+      calculateSimpleBlockLayout(block, layout, startX, startY, direction);
       break;
   }
+
+  return layout;
+}
+
+/**
+ * 计算简单层类型的 block 布局（单层，无复杂结构）
+ * 用于处理定义在 blocks 数组中的普通层（如 pool3, pool4）
+ * 不显示 block 容器边框，直接作为普通层渲染
+ */
+function calculateSimpleBlockLayout(block, layout, startX, startY, direction = 'horizontal') {
+  const layerWidth = LAYOUT_CONFIG.layerWidth;
+  const layerHeight = LAYOUT_CONFIG.layerHeight;
+
+  // 单层布局，不添加 block 标题
+  const layerData = {
+    id: block.id || block.name,
+    name: block.name,
+    type: block.type,
+    x: startX,
+    y: startY,
+    width: layerWidth,
+    height: layerHeight,
+    data: block,
+    collapsed: false,
+    // 不设置 branchIndex，这是普通层
+  };
+
+  layout.layers.push(layerData);
+  layout.width = layerWidth;
+  layout.height = layerHeight;
+
+  // 不设置 forkPoint/mergePoint，这是普通层
+  // 不设置 titleY，不显示 block 标题
+  layout.titleY = null;
 
   return layout;
 }
@@ -966,7 +1002,9 @@ function calculateParallelBlockLayout(block, layout, startX, startY, direction =
     layout.height = currentY - startY + padding;
 
     // 计算 fork 点：block 左侧中心
-    const contentHeight = currentY - startY - titleHeight - padding;
+    // 内容区域从 startY + titleHeight 到 currentY（最后一层底部）
+    // padding 未添加到内容区域顶部，所以 contentHeight 不应减去 padding
+    const contentHeight = currentY - startY - titleHeight;
     layout.forkPoint = {
       x: startX + padding / 2,
       y: startY + titleHeight + contentHeight / 2

@@ -185,6 +185,7 @@ function normalizeSection(section, layers) {
  */
 function normalizeBlock(block) {
   return {
+    id: block.id || block.name,  // 保留 id 属性，若无则使用 name 作为默认值
     name: block.name,
     type: block.type,
     main: block.main ? block.main.map(layer => normalizeLayer(layer)) : [],
