@@ -582,7 +582,7 @@ function generateParallelConnections(block) {
 }
 
 /**
- * 生成残差块的内部连接（按用户描述的折线方式）
+ * 生成残差块的内部连接（新的折线方式）
  * @param {object} block - 块布局数据
  * @returns {string} SVG 字符串
  */
@@ -596,27 +596,46 @@ function generateResidualConnections(block) {
 
   if (!conn) return '';
 
-  // 1. 入口分叉：从 block 左边缘中心 → Conv1/Skip 左边中点（折线）
-  // forkToConv1: 先垂直向上到 Conv1 中心 y，再水平到 Conv1 左边
-  const forkToConv1 = conn.forkToConv1;
-  parts.push(`<path d="M${forkToConv1.from.x} ${forkToConv1.from.y} L${forkToConv1.from.x} ${forkToConv1.to.y} L${forkToConv1.to.x} ${forkToConv1.to.y}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
+  // 生成折线
+  function generatePolyline(connData, addArrow = true) {
+    const points = connData.points;
+    if (!points || points.length < 2) return '';
 
-  // forkToSkip: 先垂直向下到 Skip 中心 y，再水平到 Skip 左边
-  const forkToSkip = conn.forkToSkip;
-  parts.push(`<path d="M${forkToSkip.from.x} ${forkToSkip.from.y} L${forkToSkip.from.x} ${forkToSkip.to.y} L${forkToSkip.to.x} ${forkToSkip.to.y}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
+    // 构建 path d 属性
+    let d = `M${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      d += ` L${points[i].x} ${points[i].y}`;
+    }
 
-  // 2. 主路径连接：Conv1 右边中点 → Conv2 左边中点（直线）
-  const conv1ToConv2 = conn.conv1ToConv2;
-  parts.push(`<path d="M${conv1ToConv2.from.x} ${conv1ToConv2.from.y} L${conv1ToConv2.to.x} ${conv1ToConv2.to.y}" stroke="#999" stroke-width="${strokeWidth}" fill="none" marker-end="url(#${arrowMarker})"/>`);
+    const arrow = addArrow ? ` marker-end="url(#${arrowMarker})"` : '';
+    return `<path d="${d}" stroke="#999" stroke-width="${strokeWidth}" fill="none"${arrow}/>`;
+  }
 
-  // 3. 出口汇聚：Conv2/Skip 右边中点 → block 右边缘中心（折线）
-  // conv2ToExit: 先水平到 block 右边缘，再垂直到 block 中心 y
-  const conv2ToExit = conn.conv2ToExit;
-  parts.push(`<path d="M${conv2ToExit.from.x} ${conv2ToExit.from.y} L${conv2ToExit.to.x} ${conv2ToExit.from.y} L${conv2ToExit.to.x} ${conv2ToExit.to.y}" stroke="#999" stroke-width="${strokeWidth}" fill="none"/>`);
+  // 生成直线
+  function generateLine(connData, addArrow = true) {
+    const arrow = addArrow ? ` marker-end="url(#${arrowMarker})"` : '';
+    return `<path d="M${connData.from.x} ${connData.from.y} L${connData.to.x} ${connData.to.y}" stroke="#999" stroke-width="${strokeWidth}" fill="none"${arrow}/>`;
+  }
 
-  // skipToExit: 先水平到 block 右边缘，再垂直到 block 中心 y
-  const skipToExit = conn.skipToExit;
-  parts.push(`<path d="M${skipToExit.from.x} ${skipToExit.from.y} L${skipToExit.to.x} ${skipToExit.from.y} L${skipToExit.to.x} ${skipToExit.to.y}" stroke="#999" stroke-width="${strokeWidth}" fill="none"/>`);
+  // Skip connection（折线）
+  if (conn.skip) {
+    parts.push(generatePolyline(conn.skip, true));
+  }
+
+  // 入口分叉（折线）
+  if (conn.entryToConv1) {
+    parts.push(generatePolyline(conn.entryToConv1, true));
+  }
+
+  // 主路径（直线）
+  if (conn.conv1ToConv2) {
+    parts.push(generateLine(conn.conv1ToConv2, true));
+  }
+
+  // 出口汇聚（折线）
+  if (conn.conv2ToExit) {
+    parts.push(generatePolyline(conn.conv2ToExit, true));
+  }
 
   return parts.join('\n');
 }

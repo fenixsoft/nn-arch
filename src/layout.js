@@ -1417,35 +1417,62 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
       layout.width = currentX - layerGap + padding - startX;
       layout.height = titleHeight + arcRadius + layerHeight + padding;
 
-      // 主路径内部连接（Conv1 → Conv2）
-      // 直接计算，不使用 calculateConnections（因为层有 path 属性会被跳过）
+      // Block 边缘中心
+      const blockLeftX = startX;
+      const blockRightX = startX + layout.width;
+      const blockCenterY = startY + layout.height / 2;
+      const blockTopY = startY;  // block 顶部 y（用于 skip 折线）
+
+      // 主路径层
       const mainLayersList = layout.layers.filter(l => l.path === 'main');
-      layout.connections = [];
-      for (let i = 0; i < mainLayersList.length - 1; i++) {
-        const from = mainLayersList[i];
-        const to = mainLayersList[i + 1];
-        layout.connections.push({
-          from: from.name,
-          to: to.name,
-          x1: from.x + layerWidth,
-          y1: from.y + layerHeight / 2,
-          x2: to.x,
-          y2: to.y + layerHeight / 2,
-          type: 'sequential'
-        });
-      }
+      const conv1 = mainLayersList[0];
+      const conv2 = mainLayersList[mainLayersList.length - 1];
 
-      // skip connection（arc 样式）
-      const firstLayer = layout.layers.find(l => l.path === 'main');
-      const lastLayer = [...layout.layers].reverse().find(l => l.path === 'main');
+      // Conv 层的中心坐标
+      const conv1LeftX = conv1.x;
+      const conv1CenterY = conv1.y + layerHeight / 2;
+      const conv1RightX = conv1.x + layerWidth;
 
-      layout.skipConnection = {
-        type: 'arc',
-        startX: firstLayer.x + layerWidth / 2,
-        startY: firstLayer.y,
-        endX: lastLayer.x + layerWidth / 2,
-        endY: lastLayer.y,
-        radius: arcRadius
+      const conv2LeftX = conv2.x;
+      const conv2CenterY = conv2.y + layerHeight / 2;
+      const conv2RightX = conv2.x + layerWidth;
+
+      // 新的连接结构（折线方式）
+      layout.residualConnections = {
+        // Skip connection：从 block 左边缘中心 → 向上折线到 block 右边缘中心
+        skip: {
+          type: 'polyline',
+          points: [
+            { x: blockLeftX, y: blockCenterY },  // 起点
+            { x: blockLeftX, y: blockTopY },     // 向上到顶部
+            { x: blockRightX, y: blockTopY },    // 水平到右边
+            { x: blockRightX, y: blockCenterY }  // 向下到右边缘中心
+          ]
+        },
+        // 入口分叉：从 block 左边缘中心 → 向下折线到 Conv1 左中点
+        entryToConv1: {
+          type: 'polyline',
+          points: [
+            { x: blockLeftX, y: blockCenterY },  // 起点（左边缘中心）
+            { x: blockLeftX, y: conv1CenterY },  // 向下到 Conv1 中心 y
+            { x: conv1LeftX, y: conv1CenterY }   // 水平到 Conv1 左边
+          ]
+        },
+        // 主路径：Conv1 右中点 → Conv2 左中点（直线）
+        conv1ToConv2: {
+          type: 'line',
+          from: { x: conv1RightX, y: conv1CenterY },
+          to: { x: conv2LeftX, y: conv2CenterY }
+        },
+        // 出口汇聚：Conv2 右中点 → 向上折线到 block 右边缘中心
+        conv2ToExit: {
+          type: 'polyline',
+          points: [
+            { x: conv2RightX, y: conv2CenterY }, // 起点（Conv2 右边）
+            { x: conv2RightX, y: blockCenterY }, // 向上到 block 中心 y
+            { x: blockRightX, y: blockCenterY }  // 水平到 block 右边缘
+          ]
+        }
       };
     }
   }

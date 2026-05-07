@@ -476,8 +476,12 @@ test('计算 residual block arc 样式布局', function() {
   assertEqual(blockLayout.name, 'ResBlock', 'block name');
   assertEqual(blockLayout.type, 'residual', 'block type');
   assertEqual(blockLayout.layers.length, 2, '主路径层数量');
-  assertEqual(blockLayout.skipConnection.type, 'arc', 'skip connection type');
-  assertEqual(blockLayout.skipConnection !== undefined, true, '存在 skip connection');
+  // arc 样式现在使用 residualConnections 结构
+  assertEqual(blockLayout.residualConnections !== undefined, true, '存在 residualConnections');
+  assertEqual(blockLayout.residualConnections.skip !== undefined, true, '存在 skip 折线');
+  assertEqual(blockLayout.residualConnections.entryToConv1 !== undefined, true, '存在入口分叉');
+  assertEqual(blockLayout.residualConnections.conv1ToConv2 !== undefined, true, '存在主路径');
+  assertEqual(blockLayout.residualConnections.conv2ToExit !== undefined, true, '存在出口汇聚');
 });
 
 test('计算 residual block parallel 样式布局', function() {
@@ -687,7 +691,9 @@ test('计算 collapsed residual block 布局', function() {
   assertEqual(layout.layers[0].width, COLLAPSED_CONFIG.horizontalLayerWidth, 'Horizontal collapsed layer width should be 216 (horizontalLayerWidth)');
   assertEqual(layout.layers[0].height, COLLAPSED_CONFIG.layerHeight, 'Collapsed layer height should match COLLAPSED_CONFIG');
   assertEqual(layout.layers[0].collapsed, true, 'Layers should have collapsed flag');
-  assertEqual(layout.skipConnection.type, 'arc', 'Should have arc skip connection');
+  // arc 样式现在使用 residualConnections 结构
+  assertEqual(layout.residualConnections !== undefined, true, 'Should have residualConnections');
+  assertEqual(layout.residualConnections.skip !== undefined, true, 'Should have skip polyline');
 });
 
 test('计算 collapsed stack block 布局', function() {
