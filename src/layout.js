@@ -716,6 +716,7 @@ function calculateBlockLayout(block, startX, startY, direction = 'horizontal') {
     act: block.act,
     norm: block.norm,
     direction: direction,
+    collapsed: block.expand === 'collapsed',
     x: startX,
     y: startY,
     width: 0,
