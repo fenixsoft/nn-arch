@@ -238,6 +238,147 @@ layers_after_blocks:
   - {id: output, name: Output, type: output, size: "28x28x256"}`
   },
 
+  resblock_identity: {
+    name: 'ResBlock (Identity)',
+    description: '维度相同的残差块 - skip connection 直接传递，不改变维度',
+    template: `name: ResBlock - Identity Shortcut
+layout: horizontal
+
+layers:
+  - {id: input, name: Input, type: input, size: "56x56x64"}
+
+blocks:
+  - name: Identity ResBlock
+    type: residual
+    style: arc
+    main:
+      - {id: conv1, name: Conv1, type: conv, kernel: 3, pad: 1, channels: 64, act: ReLU}
+      - {id: conv2, name: Conv2, type: conv, kernel: 3, pad: 1, channels: 64}
+    skip: identity
+    merge: add
+    act: ReLU
+
+layers_after_blocks:
+  - {id: output, name: Output, type: output, size: "56x56x64"}`
+  },
+
+  resblock_identity_parallel: {
+    name: 'ResBlock (Identity Parallel)',
+    description: '维度相同的残差块 - parallel 样式展示主路径和skip并行',
+    template: `name: ResBlock - Identity (Parallel Style)
+layout: horizontal
+
+layers:
+  - {id: input, name: Input, type: input, size: "56x56x64"}
+
+blocks:
+  - name: Identity ResBlock
+    type: residual
+    style: parallel
+    main:
+      - {id: conv1, name: Conv1, type: conv, kernel: 3, pad: 1, channels: 64, act: ReLU}
+      - {id: conv2, name: Conv2, type: conv, kernel: 3, pad: 1, channels: 64}
+    skip: identity
+    merge: add
+    act: ReLU
+
+layers_after_blocks:
+  - {id: output, name: Output, type: output, size: "56x56x64"}`
+  },
+
+  resblock_projection: {
+    name: 'ResBlock (Projection)',
+    description: '维度不同的残差块 - skip 分支使用 1x1 conv 调整维度，进行下采样',
+    template: `name: ResBlock - Projection Shortcut
+layout: horizontal
+
+layers:
+  - {id: input, name: Input, type: input, size: "56x56x64"}
+
+blocks:
+  - name: Projection ResBlock
+    type: residual
+    style: parallel
+    main:
+      - {id: conv1, name: Conv1, type: conv, kernel: 3, stride: 2, pad: 1, channels: 128, act: ReLU}
+      - {id: conv2, name: Conv2, type: conv, kernel: 3, pad: 1, channels: 128}
+    skip:
+      - {id: skip_conv, name: "1×1 Conv", type: conv, kernel: 1, stride: 2, channels: 128}
+    merge: add
+    act: ReLU
+
+layers_after_blocks:
+  - {id: output, name: Output, type: output, size: "28x28x128"}`
+  },
+
+  resblock_projection_arc: {
+    name: 'ResBlock (Projection Arc)',
+    description: '维度不同的残差块 - arc 样式，skip 分支有投影层',
+    template: `name: ResBlock - Projection (Arc Style)
+layout: horizontal
+
+layers:
+  - {id: input, name: Input, type: input, size: "56x56x64"}
+
+blocks:
+  - name: Projection ResBlock
+    type: residual
+    style: arc
+    main:
+      - {id: conv1, name: Conv1, type: conv, kernel: 3, stride: 2, pad: 1, channels: 128, act: ReLU}
+      - {id: conv2, name: Conv2, type: conv, kernel: 3, pad: 1, channels: 128}
+    skip:
+      - {id: skip_conv, name: "1×1 Conv", type: conv, kernel: 1, stride: 2, channels: 128}
+    merge: add
+    act: ReLU
+
+layers_after_blocks:
+  - {id: output, name: Output, type: output, size: "28x28x128"}`
+  },
+
+  resblock_comparison: {
+    name: 'ResBlock Comparison',
+    description: '对比两种残差块：Identity vs Projection',
+    template: `name: ResBlock Comparison
+layout: vertical
+
+sections:
+  - name: Identity Block (维度相同)
+    layers: [input1, identity_block]
+  - name: Projection Block (维度变化)
+    layers: [input2, projection_block]
+
+layers:
+  - {id: input1, name: Input, type: input, size: "56x56x64"}
+  - {id: input2, name: Input, type: input, size: "56x56x64"}
+
+blocks:
+  - name: Identity Block
+    type: residual
+    style: arc
+    main:
+      - {id: id_conv1, name: Conv1, type: conv, kernel: 3, pad: 1, channels: 64, act: ReLU}
+      - {id: id_conv2, name: Conv2, type: conv, kernel: 3, pad: 1, channels: 64}
+    skip: identity
+    merge: add
+    act: ReLU
+
+  - name: Projection Block
+    type: residual
+    style: parallel
+    main:
+      - {id: proj_conv1, name: Conv1, type: conv, kernel: 3, stride: 2, pad: 1, channels: 128, act: ReLU}
+      - {id: proj_conv2, name: Conv2, type: conv, kernel: 3, pad: 1, channels: 128}
+    skip:
+      - {id: proj_skip, name: "1×1", type: conv, kernel: 1, stride: 2, channels: 128}
+    merge: add
+    act: ReLU
+
+layers_after_blocks:
+  - {id: output1, name: "56x56x64", type: output}
+  - {id: output2, name: "28x28x128", type: output}`
+  },
+
   googlenet_collapsed: {
     name: 'GoogLeNet (Collapsed Inception)',
     template: `name: GoogLeNet (Collapsed)
