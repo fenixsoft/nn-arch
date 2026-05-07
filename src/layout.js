@@ -754,18 +754,20 @@ function calculateBlockLayout(block, startX, startY, direction = 'horizontal') {
  * vertical: 分支水平排列，每个分支内部垂直排列多层
  */
 function calculateParallelBlockLayout(block, layout, startX, startY, direction = 'horizontal') {
-  const layerWidth = LAYOUT_CONFIG.layerWidth;
-  const layerHeight = LAYOUT_CONFIG.layerHeight;
-  const layerGap = LAYOUT_CONFIG.layerGap;
-  const branchGap = LAYOUT_CONFIG.branchGap;
-  const padding = LAYOUT_CONFIG.blockPadding;
+  // 根据折叠状态选择配置
+  const config = layout.collapsed ? COLLAPSED_CONFIG : LAYOUT_CONFIG;
+  const layerWidth = config.layerWidth;
+  const layerHeight = config.layerHeight;
+  const layerGap = config.layerGap;
+  const branchGap = config.branchGap;
+  const padding = config.blockPadding;
 
   const branches = block.branches || [];
   if (branches.length === 0) return;
 
-  // 标题区域高度/宽度
-  const titleHeight = LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.blockTitleGap;
-  const titleWidth = LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.blockTitleGap;
+  // 标题区域高度/宽度（使用折叠感知的间距）
+  const titleHeight = LAYOUT_CONFIG.fontSizeSection + (layout.collapsed ? COLLAPSED_CONFIG.titleGap : LAYOUT_CONFIG.blockTitleGap);
+  const titleWidth = LAYOUT_CONFIG.fontSizeSection + (layout.collapsed ? COLLAPSED_CONFIG.titleGap : LAYOUT_CONFIG.blockTitleGap);
 
   // 记录每个分支的层，用于计算 fork/merge
   const branchLayerGroups = [];
@@ -793,7 +795,8 @@ function calculateParallelBlockLayout(block, layout, startX, startY, direction =
             width: layerWidth,
             height: layerHeight,
             data: layer,
-            branchIndex: branchIndex
+            branchIndex: branchIndex,
+            collapsed: layout.collapsed
           };
           layout.layers.push(layerData);
           branchLayers.push(layerData);
@@ -818,7 +821,8 @@ function calculateParallelBlockLayout(block, layout, startX, startY, direction =
           width: layerWidth,
           height: layerHeight,
           data: branch,
-          branchIndex: branchIndex
+          branchIndex: branchIndex,
+          collapsed: layout.collapsed
         };
         layout.layers.push(layerData);
         branchLayers.push(layerData);
@@ -868,7 +872,8 @@ function calculateParallelBlockLayout(block, layout, startX, startY, direction =
             width: layerWidth,
             height: layerHeight,
             data: layer,
-            branchIndex: branchIndex
+            branchIndex: branchIndex,
+            collapsed: layout.collapsed
           };
           layout.layers.push(layerData);
           branchLayers.push(layerData);
@@ -893,7 +898,8 @@ function calculateParallelBlockLayout(block, layout, startX, startY, direction =
           width: layerWidth,
           height: layerHeight,
           data: branch,
-          branchIndex: branchIndex
+          branchIndex: branchIndex,
+          collapsed: layout.collapsed
         };
         layout.layers.push(layerData);
         branchLayers.push(layerData);
