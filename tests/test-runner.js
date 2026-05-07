@@ -63,7 +63,10 @@ globalThis.generateLayer = svgGenerator.generateLayer;
 globalThis.generateCollapsedLayer = svgGenerator.generateCollapsedLayer;
 globalThis.generateLayerContent = svgGenerator.generateLayerContent;
 globalThis.generateConnection = svgGenerator.generateConnection;
+globalThis.generateRowConnection = svgGenerator.generateRowConnection;
+globalThis.generateSectionRowConnection = svgGenerator.generateSectionRowConnection;
 globalThis.generateBlockConnection = svgGenerator.generateBlockConnection;
+globalThis.generateErrorSvg = svgGenerator.generateErrorSvg;
 globalThis.generateBlock = svgGenerator.generateBlock;
 globalThis.generateParallelConnections = svgGenerator.generateParallelConnections;
 globalThis.generateSkipConnection = svgGenerator.generateSkipConnection;
@@ -80,6 +83,9 @@ require('./test-layout.js');
 
 console.log('\n=== Running SVG Generator Tests ===\n');
 require('./test-svg.js');
+
+console.log('\n=== Running Browser Compatibility Tests ===\n');
+require('./test-browser-compat.js');
 
 // 输出总结
 console.log('\n' + '='.repeat(40));

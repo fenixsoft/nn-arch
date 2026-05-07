@@ -40,6 +40,10 @@ const COLLAPSED_CONFIG = {
   branchGap: 12,       // 分支间距（vs 正常 27）
   cornerRadius: 4.8    // 圆角半径（缩小以匹配小方块）
 };
+// 浏览器环境：将 COLLAPSED_CONFIG 添加到全局作用域
+if (typeof globalThis !== 'undefined') {
+  globalThis.COLLAPSED_CONFIG = COLLAPSED_CONFIG;
+}
 
 /**
  * 计算网络布局

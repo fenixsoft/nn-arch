@@ -41,16 +41,8 @@ const SVG_CONFIG = {
   arrowRefY: 2.7           // 1.8 * 3 * 0.5
 };
 
-// Collapsed block 配置（从 layout.js 同步）
-const COLLAPSED_CONFIG = {
-  layerWidth: 50,
-  layerHeight: 30,
-  layerGap: 10,
-  blockPadding: 15,
-  titleGap: 10,
-  branchGap: 12,
-  cornerRadius: 4.8
-};
+// Collapsed block 配置（由 layout.js 定义并导出到 globalThis）
+// 直接使用 globalThis.COLLAPSED_CONFIG，不重新声明以避免与 layout.js 的 const 冲突
 
 /**
  * 生成 SVG 字符串
@@ -194,7 +186,7 @@ ${content}`;
  */
 function generateCollapsedLayer(layer) {
   const colors = COLORS[layer.type] || COLORS.input;
-  const cornerRadius = COLLAPSED_CONFIG.cornerRadius || 4.8;
+  const cornerRadius = (globalThis.COLLAPSED_CONFIG && globalThis.COLLAPSED_CONFIG.cornerRadius) || 4.8;
 
   // Minimal rectangle without any text
   return `
@@ -632,7 +624,6 @@ if (typeof module !== 'undefined' && module.exports) {
     getDisplayName,
     getLayerDetail,
     COLORS,
-    SVG_CONFIG,
-    COLLAPSED_CONFIG
+    SVG_CONFIG
   };
 }
