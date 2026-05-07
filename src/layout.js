@@ -1388,13 +1388,15 @@ function calculateResidualBlockLayout(block, layout, startX, startY, direction =
               { x: blockRightX, y: blockCenterY }  // 水平到 block 右边缘
             ]
           },
-          // Skip 出口汇聚：Skip 右中点 → 向上折线到 block 右边缘中心
+          // Skip 出口汇聚：Skip 右中点 → 先水平到 Conv2 右边缘 → 向上 → 到 block 右边缘
+          // 这样不穿过 Conv2，且与 conv2ToExit 在 Conv2 右边缘处汇聚
           skipToExit: {
             type: 'polyline',
             points: [
-              { x: skipRightX, y: skipCenterY },   // 起点（Skip 右边）
-              { x: skipRightX, y: blockCenterY },  // 向上到 block 中心 y
-              { x: blockRightX, y: blockCenterY }  // 水平到 block 右边缘
+              { x: skipRightX, y: skipCenterY },     // 起点（Skip 右边）
+              { x: conv2RightX, y: skipCenterY },   // 水平到 Conv2 右边缘（在 Conv2 下方，不穿过）
+              { x: conv2RightX, y: blockCenterY },  // 在 Conv2 右侧向上到 block 中心 y（与 conv2ToExit 汇聚）
+              { x: blockRightX, y: blockCenterY }   // 一起水平到 block 右边缘
             ]
           }
         };
