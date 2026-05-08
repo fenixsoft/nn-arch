@@ -92,7 +92,6 @@ blocks:
 
   - name: ResBlock2
     type: residual
-    style: parallel
     main:
       - {id: rb2_conv1, name: conv1, type: conv, kernel: 3, channels: 64, act: ReLU}
       - {id: rb2_conv2, name: conv2, type: conv, kernel: 3, channels: 64}
