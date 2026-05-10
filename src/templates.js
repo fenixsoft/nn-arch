@@ -378,6 +378,36 @@ layers_after_blocks:
   - {id: output2, name: "28x28x128", type: output}`
   },
 
+  dcgan: {
+    name: 'DCGAN',
+    description: 'Deep Convolutional GAN - 生成器使用反卷积上采样，判别器使用卷积下采样',
+    template: `name: DCGAN
+layout: horizontal
+
+sections:
+  - name: 生成器 (Generator)
+    layers: [z_input, g_proj, g_conv1, g_conv2, g_conv3, g_conv4, g_output]
+  - name: 判别器 (Discriminator)
+    layers: [d_input, d_conv1, d_conv2, d_conv3, d_conv4, d_output]
+
+layers:
+  # === 生成器 ===
+  - {id: z_input, name: Noise z, type: input, size: "100"}
+  - {id: g_proj, name: Project+Reshape, type: fc, size: "4x4x1024", act: ReLU}
+  - {id: g_conv1, name: DeConv1, type: conv, kernel: 4, stride: 2, channels: 512, out: "8x8x512", act: ReLU}
+  - {id: g_conv2, name: DeConv2, type: conv, kernel: 4, stride: 2, channels: 256, out: "16x16x256", act: ReLU}
+  - {id: g_conv3, name: DeConv3, type: conv, kernel: 4, stride: 2, channels: 128, out: "32x32x128", act: ReLU}
+  - {id: g_conv4, name: DeConv4, type: conv, kernel: 4, stride: 2, channels: 64, out: "64x64x64", act: ReLU}
+  - {id: g_output, name: Generated Image, type: output, size: "64x64x3", act: Tanh}
+  # === 判别器 ===
+  - {id: d_input, name: Real/Fake Image, type: input, size: "64x64x3"}
+  - {id: d_conv1, name: Conv1, type: conv, kernel: 4, stride: 2, channels: 64, out: "32x32x64", act: LeakyReLU}
+  - {id: d_conv2, name: Conv2, type: conv, kernel: 4, stride: 2, channels: 128, out: "16x16x128", act: LeakyReLU}
+  - {id: d_conv3, name: Conv3, type: conv, kernel: 4, stride: 2, channels: 256, out: "8x8x256", act: LeakyReLU}
+  - {id: d_conv4, name: Conv4, type: conv, kernel: 4, stride: 2, channels: 512, out: "4x4x512", act: LeakyReLU}
+  - {id: d_output, name: Real/Fake, type: output, size: 1, act: Sigmoid}`
+  },
+
   googlenet_collapsed: {
     name: 'GoogLeNet (Collapsed Inception)',
     template: `name: GoogLeNet (Collapsed)
