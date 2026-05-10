@@ -462,6 +462,8 @@ function calculateSectionsLayout(network, layout) {
 
     // 从 section 定义或 network 获取标注
     const rowLabel = network.sections[i].rowLabel || network.rowLabels[i] || '';
+    // 从 section 定义获取连接方向
+    const rowDirection = network.sections[i].rowDirection || 'down';
 
     layout.rowConnections.push({
       from: currentSection.name,
@@ -473,7 +475,8 @@ function calculateSectionsLayout(network, layout) {
       toY: toY,
       label: rowLabel,
       labelX: Math.max(fromX, toX) + LAYOUT_CONFIG.layerGap,
-      labelY: midY
+      labelY: midY,
+      direction: rowDirection
     });
   }
 

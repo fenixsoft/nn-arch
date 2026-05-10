@@ -174,7 +174,8 @@ function normalizeSection(section, layers) {
   return {
     name: section.name,
     layers: layerIds,  // 使用 id 而不是 name
-    rowLabel: section.row_label || null  // 该 section 后的行间连接标注
+    rowLabel: section.row_label || null,  // 该 section 后的行间连接标注
+    rowDirection: section.row_direction || 'down'  // 行间连接方向: down(单向向下) | bidirectional(双向)
   };
 }
 

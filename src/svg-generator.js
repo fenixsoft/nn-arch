@@ -318,9 +318,29 @@ function generateConnection(conn) {
 
 /**
  * 生成行间连接（折线）
+ * 支持单向 (down) 和双向 (bidirectional) 连接
  */
 function generateRowConnection(conn) {
-  // 折线路径
+  const offset = SVG_CONFIG.arrowWidth * 5;  // 双向箭头的左右偏移量
+
+  if (conn.direction === 'bidirectional') {
+    // 双向连接：两条平行折线，左线下行（箭头向下），右线上行（箭头向上）
+    const leftPath = `<path d="M${conn.fromX - offset} ${conn.fromY} L${conn.fromX - offset} ${conn.midY} L${conn.toX - offset} ${conn.midY} L${conn.toX - offset} ${conn.toY}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`;
+    const rightPath = `<path d="M${conn.toX + offset} ${conn.toY} L${conn.toX + offset} ${conn.midY} L${conn.fromX + offset} ${conn.midY} L${conn.fromX + offset} ${conn.fromY}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`;
+
+    let result = leftPath + '\n' + rightPath;
+
+    // 标注文本居中显示在两条线之间
+    if (conn.label) {
+      const labelX = conn.labelX;
+      const labelY = conn.labelY;
+      result += `\n<text x="${labelX}" y="${labelY}" text-anchor="start" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#666">${conn.label}</text>`;
+    }
+
+    return result;
+  }
+
+  // 单向连接（默认）
   const path = `<path d="M${conn.fromX} ${conn.fromY} L${conn.fromX} ${conn.midY} L${conn.toX} ${conn.midY} L${conn.toX} ${conn.toY}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`;
 
   // 标注文本（如果有）

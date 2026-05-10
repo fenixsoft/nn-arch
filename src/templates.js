@@ -387,6 +387,7 @@ layout: horizontal
 sections:
   - name: 生成器 (Generator)
     layers: [z_input, g_proj, g_conv1, g_conv2, g_conv3, g_conv4, g_output]
+    row_direction: bidirectional
   - name: 判别器 (Discriminator)
     layers: [d_input, d_conv1, d_conv2, d_conv3, d_conv4, d_output]
 
