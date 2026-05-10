@@ -409,6 +409,40 @@ layers:
   - {id: d_output, name: Real/Fake, type: output, size: 1, act: Sigmoid}`
   },
 
+  rnn_unrolled: {
+    name: 'Vanilla RNN (Unrolled)',
+    description: '标准 RNN 沿时间轴展开 - 展示隐藏状态如何在时间步之间流动',
+    template: `name: Vanilla RNN (Unrolled)
+layout: horizontal
+
+sections:
+  - name: 时间步 t=0
+    layers: [x0, h0, y0]
+    row_label: "h₀→h₁"
+  - name: 时间步 t=1
+    layers: [x1, h1, y1]
+    row_label: "h₁→h₂"
+  - name: 时间步 t=2
+    layers: [x2, h2, y2]
+    row_label: "h₂→h₃"
+  - name: 时间步 t=3
+    layers: [x3, h3, y3]
+
+layers:
+  - {id: x0, name: "x₀", type: input, size: 128}
+  - {id: h0, name: "RNN h₀", type: rnn, size: 256, act: tanh}
+  - {id: y0, name: "y₀", type: output, size: 10}
+  - {id: x1, name: "x₁", type: input, size: 128}
+  - {id: h1, name: "RNN h₁", type: rnn, size: 256, act: tanh}
+  - {id: y1, name: "y₁", type: output, size: 10}
+  - {id: x2, name: "x₂", type: input, size: 128}
+  - {id: h2, name: "RNN h₂", type: rnn, size: 256, act: tanh}
+  - {id: y2, name: "y₂", type: output, size: 10}
+  - {id: x3, name: "x₃", type: input, size: 128}
+  - {id: h3, name: "RNN h₃", type: rnn, size: 256, act: tanh}
+  - {id: y3, name: "y₃", type: output, size: 10}`
+  },
+
   googlenet_collapsed: {
     name: 'GoogLeNet (Collapsed Inception)',
     template: `name: GoogLeNet (Collapsed)

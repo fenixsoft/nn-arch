@@ -16,6 +16,7 @@ const COLORS = {
   activation: { fill: '#f8f0e8', stroke: '#d9b559' },
   merge: { fill: '#f0f8e8', stroke: '#59d9b5' },
   identity: { fill: '#f8f8f8', stroke: '#999999' },
+  rnn: { fill: '#f8ece0', stroke: '#c07040' },    // RNN/LSTM 循环层
   note: { fill: '#f8f8f8', stroke: '#cccccc' },  // 注释/说明方块
   // Block colors
   block_residual: { fill: '#e8f0f8', stroke: '#5990d9' },

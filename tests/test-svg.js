@@ -258,6 +258,33 @@ test('COLORS 包含 block 类型颜色', function() {
   assertEqual(COLORS.block_stack.stroke, '#d9b559', 'stack stroke');
 });
 
+test('COLORS 包含 rnn 层类型颜色', function() {
+  assertEqual(COLORS.rnn.fill, '#f8ece0', 'rnn fill');
+  assertEqual(COLORS.rnn.stroke, '#c07040', 'rnn stroke');
+});
+
+test('RNN 层渲染', function() {
+  const layout = {
+    width: 400,
+    height: 120,
+    title: { x: 200, y: 25, text: 'RNN Test' },
+    sections: [],
+    layers: [
+      {name: 'RNN h0', type: 'rnn', x: 10, y: 40, width: 216, height: 126, data: {size: 256, act: 'tanh'}}
+    ],
+    connections: [],
+    rowConnections: [],
+    blocks: []
+  };
+
+  const svg = generateSvg(layout);
+  assertEqual(svg.includes('<svg'), true, '包含 SVG 标签');
+  assertEqual(svg.includes('RNN h0'), true, '包含层名称');
+  assertEqual(svg.includes('#f8ece0'), true, '包含 rnn fill 颜色');
+  assertEqual(svg.includes('#c07040'), true, '包含 rnn stroke 颜色');
+  assertEqual(svg.includes('tanh'), true, '包含激活函数');
+});
+
 test('生成 parallel block SVG', function() {
   const blockLayout = {
     name: 'MultiHead',
