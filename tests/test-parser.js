@@ -561,9 +561,9 @@ test('ResNet18 模板包含 style 属性', function() {
   const resnetYaml = getTemplate('resnet18');
   const result = parseNetworkYaml(resnetYaml);
   assertEqual(result.blocks.length, 2, 'ResNet18 blocks 数量');
-  // 第一块默认 arc，第二块显式 parallel
+  // 两块均为 arc 样式（与模板定义一致）
   assertEqual(result.blocks[0].style, 'arc', 'ResBlock1 style 默认 arc');
-  assertEqual(result.blocks[1].style, 'parallel', 'ResBlock2 style');
+  assertEqual(result.blocks[1].style, 'arc', 'ResBlock2 style');
 });
 
 test('Transformer 模板包含 expand 属性', function() {
