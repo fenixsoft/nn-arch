@@ -300,6 +300,8 @@ function getLayerDetail(layer) {
       return data.size;
     case 'embedding':
       return data.size;
+    case 'rnn':
+      return data.size;
     case 'attention':
       return `heads=${data.heads || 'N/A'}`;
     default:
