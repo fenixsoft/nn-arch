@@ -453,7 +453,7 @@ sections:
   - name: 编码器 (Encoder)
     layers: [enc_input, enc_embed, enc_h1, enc_h2, enc_h3]
     row_label: "Context Vector"
-    row_direction: bidirectional
+    row_direction: down
   - name: 解码器 (Decoder)
     layers: [dec_h1, dec_h2, dec_h3, dec_fc, dec_output]
 
