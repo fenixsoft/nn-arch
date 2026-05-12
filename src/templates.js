@@ -443,6 +443,53 @@ layers:
   - {id: y3, name: "y₃", type: output, size: 10}`
   },
 
+  seq2seq: {
+    name: 'Seq2Seq (Encoder-Decoder)',
+    description: '序列到序列模型 - 编码器将输入序列编码为上下文向量，解码器从上下文向量生成输出序列',
+    template: `name: Seq2Seq (Encoder-Decoder)
+layout: horizontal
+
+sections:
+  - name: 编码器 (Encoder)
+    layers: [enc_input, enc_embed, enc_h1, enc_h2, enc_h3]
+    row_label: "Context Vector"
+    row_direction: bidirectional
+  - name: 解码器 (Decoder)
+    layers: [dec_h1, dec_h2, dec_h3, dec_fc, dec_output]
+
+layers:
+  - {id: enc_input, name: "输入序列", type: input, size: "tokens"}
+  - {id: enc_embed, name: Embedding, type: embedding, size: 256}
+  - {id: enc_h1, name: "RNN h₁", type: rnn, size: 512, act: tanh}
+  - {id: enc_h2, name: "RNN h₂", type: rnn, size: 512, act: tanh}
+  - {id: enc_h3, name: "RNN h₃", type: rnn, size: 512, act: tanh}
+  - {id: dec_h1, name: "RNN h₁", type: rnn, size: 512, act: tanh}
+  - {id: dec_h2, name: "RNN h₂", type: rnn, size: 512, act: tanh}
+  - {id: dec_h3, name: "RNN h₃", type: rnn, size: 512, act: tanh}
+  - {id: dec_fc, name: FC, type: fc, size: 10000}
+  - {id: dec_output, name: "输出序列", type: output, size: 10000, act: Softmax}`
+  },
+
+  seq2seq_flow: {
+    name: 'Seq2Seq (Data Flow)',
+    description: '序列到序列模型 - 单行数据流布局，显式展示编码器到解码器的上下文向量传递',
+    template: `name: Seq2Seq (Data Flow)
+layout: horizontal
+
+layers:
+  - {id: enc_input, name: "Input Seq", type: input, size: "tokens"}
+  - {id: enc_embed, name: Embedding, type: embedding, size: 256}
+  - {id: enc_h1, name: "Enc h₁", type: rnn, size: 512, act: tanh}
+  - {id: enc_h2, name: "Enc h₂", type: rnn, size: 512, act: tanh}
+  - {id: enc_h3, name: "Enc h₃", type: rnn, size: 512, act: tanh}
+  - {id: context, name: Context, type: fc, size: 512}
+  - {id: dec_h1, name: "Dec h₁", type: rnn, size: 512, act: tanh}
+  - {id: dec_h2, name: "Dec h₂", type: rnn, size: 512, act: tanh}
+  - {id: dec_h3, name: "Dec h₃", type: rnn, size: 512, act: tanh}
+  - {id: dec_fc, name: FC, type: fc, size: 10000}
+  - {id: dec_output, name: "Output Seq", type: output, size: 10000, act: Softmax}`
+  },
+
   googlenet_collapsed: {
     name: 'GoogLeNet (Collapsed Inception)',
     template: `name: GoogLeNet (Collapsed)
