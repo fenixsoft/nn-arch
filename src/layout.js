@@ -207,11 +207,13 @@ function calculateHorizontalLayout(network, layout) {
 /**
  * 按 sections 分行布局（每个 section 内支持换行）
  * 支持 layers 和 blocks 混合引用
+ * @param {object} network - 网络定义，包含 align 属性 ('left' | 'center')
  */
 function calculateSectionsLayout(network, layout) {
   const layerHeight = LAYOUT_CONFIG.layerHeight;
   const layerWidth = LAYOUT_CONFIG.layerWidth;
   let currentY = LAYOUT_CONFIG.startY;
+  const align = network.align || 'left';  // 默认左对齐
 
   // 计算标题位置
   layout.title.y = LAYOUT_CONFIG.fontSizeTitle + LAYOUT_CONFIG.titleGap;
@@ -477,6 +479,83 @@ function calculateSectionsLayout(network, layout) {
       labelX: Math.max(fromX, toX) + LAYOUT_CONFIG.layerGap,
       labelY: midY,
       direction: rowDirection
+    });
+  }
+
+  // 居中对齐：如果 align === 'center'，将所有 sections 居中
+  if (align === 'center' && layout.sections.length > 0) {
+    // 计算所有 sections 的最大宽度
+    const maxSectionWidth = Math.max(...layout.sections.map(s => s.width));
+
+    // 计算居中偏移量：使最宽的 section 居中
+    const targetWidth = maxSectionWidth + LAYOUT_CONFIG.startX * 2;
+
+    // 计算每个 section 的偏移量
+    layout.sections.forEach((section, sectionIndex) => {
+      const sectionOffset = (maxSectionWidth - section.width) / 2;
+
+      // 调整 section 框的 x 坐标
+      section.x += sectionOffset;
+
+      // 调整该 section 内所有层的 x 坐标
+      layout.layers.forEach(layer => {
+        if (layer.sectionIndex === sectionIndex) {
+          layer.x += sectionOffset;
+        }
+      });
+
+      // 调整该 section 内所有 blocks 的 x 坐标
+      layout.blocks.forEach(block => {
+        // 检查 block 是否属于该 section（通过检查其内部层的 sectionIndex）
+        const blockLayers = block.layers || [];
+        if (blockLayers.some(l => l.sectionIndex === sectionIndex)) {
+          block.x += sectionOffset;
+          // 调整 block 内部层的 x 坐标
+          blockLayers.forEach(layer => {
+            layer.x += sectionOffset;
+          });
+          // 调整 fork/merge 点的 x 坐标
+          if (block.forkPoint) block.forkPoint.x += sectionOffset;
+          if (block.mergePoint) block.mergePoint.x += sectionOffset;
+        }
+      });
+    });
+
+    // 调整 section 内连接的 x 坐标
+    if (layout.sectionInternalConnections) {
+      layout.sectionInternalConnections.forEach(conn => {
+        const section = layout.sections[conn.sectionIndex];
+        const sectionOffset = (maxSectionWidth - section.width) / 2;
+        conn.x1 += sectionOffset;
+        conn.x2 += sectionOffset;
+      });
+    }
+
+    // 调整换行连接的 x 坐标
+    if (layout.sectionRowConnections) {
+      layout.sectionRowConnections.forEach(conn => {
+        // 找到对应的 section（通过 from 元素名称）
+        const fromLayer = layout.layers.find(l => l.name === conn.from);
+        if (fromLayer) {
+          const section = layout.sections[fromLayer.sectionIndex];
+          const sectionOffset = (maxSectionWidth - section.width) / 2;
+          conn.fromX += sectionOffset;
+          conn.toX += sectionOffset;
+        }
+      });
+    }
+
+    // 调整行间连接的 x 坐标
+    layout.rowConnections.forEach(conn => {
+      const fromSection = layout.sections.find(s => s.name === conn.from);
+      const toSection = layout.sections.find(s => s.name === conn.to);
+      if (fromSection && toSection) {
+        const fromOffset = (maxSectionWidth - fromSection.width) / 2;
+        const toOffset = (maxSectionWidth - toSection.width) / 2;
+        conn.fromX += fromOffset;
+        conn.toX += toOffset;
+        conn.labelX = Math.max(conn.fromX, conn.toX) + LAYOUT_CONFIG.layerGap;
+      }
     });
   }
 

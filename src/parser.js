@@ -68,6 +68,7 @@ function parseNetworkYaml(yamlText) {
   const network = {
     name: parsed.name || 'Unnamed Network',
     layout: parsed.layout || 'horizontal',
+    align: parsed.align || 'left',  // sections 对齐方式: left | center
     sections: [],  // 稍后处理
     layers: layers,
     blocks: parsed.blocks ? parsed.blocks.map(block => normalizeBlock(block)) : [],
