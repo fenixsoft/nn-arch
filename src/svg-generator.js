@@ -304,6 +304,10 @@ function getLayerDetail(layer) {
       return data.size;
     case 'attention':
       return `heads=${data.heads || 'N/A'}`;
+    case 'norm':
+    case 'residual':
+    case 'dense':
+      return data.size;
     default:
       return null;
   }
