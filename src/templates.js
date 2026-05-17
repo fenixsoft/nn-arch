@@ -144,6 +144,54 @@ layers_after_blocks:
   - {id: output, name: Output, type: output, size: 10000}`
   },
 
+  transformer_full: {
+    name: 'Transformer (Full Architecture)',
+    description: '完整的 Transformer 编码器-解码器架构，来自 "Attention is All You Need" 论文',
+    template: `name: Transformer Architecture
+layout: parallel-columns
+
+columns:
+  - name: Encoder
+    layers:
+      - {id: enc_input, name: Input Embedding, type: embedding, size: "+Positional Encoding"}
+    blocks:
+      - name: Encoder Block
+        type: stack
+        repeat: 6
+        expand: false
+        layers:
+          - {id: enc_mha, name: Multi-Head Attention, type: attention, size: ""}
+          - {id: enc_add1, name: Add & Norm, type: norm, size: ""}
+          - {id: enc_ffn, name: Feed Forward, type: dense, size: ""}
+          - {id: enc_add2, name: Add & Norm, type: norm, size: ""}
+
+  - name: Decoder
+    layers:
+      - {id: dec_input, name: Output Embedding, type: embedding, size: "+Positional Encoding"}
+    blocks:
+      - name: Decoder Block
+        type: stack
+        repeat: 6
+        expand: false
+        layers:
+          - {id: dec_masked_mha, name: Masked Multi-Head Attention, type: attention, size: ""}
+          - {id: dec_add1, name: Add & Norm, type: norm, size: ""}
+          - {id: dec_cross_attn, name: Multi-Head Attention, type: attention, size: ""}
+          - {id: dec_add2, name: Add & Norm, type: norm, size: ""}
+          - {id: dec_ffn, name: Feed Forward, type: dense, size: ""}
+          - {id: dec_add3, name: Add & Norm, type: norm, size: ""}
+    layers_after_blocks:
+      - {id: linear, name: Linear, type: dense, size: ""}
+      - {id: softmax, name: Softmax, type: activation, size: ""}
+
+cross_connections:
+  - {from: enc_add2, to: [dec_cross_attn, dec_cross_attn], labels: [K, V], label_position: "Encoder Output"}
+
+fork_connections:
+  - {from: enc_input, to: enc_mha, labels: [Q, K, V]}
+  - {from: dec_input, to: dec_masked_mha, labels: [Q, K, V]}`
+  },
+
   googlenet: {
     name: 'GoogLeNet (Inception v1)',
     template: `name: GoogLeNet

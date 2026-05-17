@@ -74,7 +74,12 @@ function parseNetworkYaml(yamlText) {
     blocks: parsed.blocks ? parsed.blocks.map(block => normalizeBlock(block)) : [],
     connections: [],
     layersAfterBlocks: parsed.layers_after_blocks ? parsed.layers_after_blocks.map(layer => normalizeLayer(layer)) : [],
-    rowLabels: parsed.row_labels || []  // 行间连接标注
+    rowLabels: parsed.row_labels || [],  // 行间连接标注
+    // 新增：双列布局支持
+    columns: parsed.columns ? parsed.columns.map(column => normalizeColumn(column)) : [],
+    crossConnections: parsed.cross_connections || [],
+    // 新增：分叉连接支持（用于 Q, K, V 等分叉）
+    forkConnections: parsed.fork_connections || []
   };
 
   // 验证 block 内部层 id 唯一性
@@ -177,6 +182,20 @@ function normalizeSection(section, layers) {
     layers: layerIds,  // 使用 id 而不是 name
     rowLabel: section.row_label || null,  // 该 section 后的行间连接标注
     rowDirection: section.row_direction || 'down'  // 行间连接方向: down(单向向下) | bidirectional(双向)
+  };
+}
+
+/**
+ * 标准化列定义（用于 parallel-columns 布局）
+ * @param {object} column - 原始列定义
+ * @returns {object} 标准化后的列定义
+ */
+function normalizeColumn(column) {
+  return {
+    name: column.name,
+    layers: (column.layers || []).map(layer => normalizeLayer(layer)),
+    blocks: column.blocks ? column.blocks.map(block => normalizeBlock(block)) : [],
+    layersAfterBlocks: column.layers_after_blocks ? column.layers_after_blocks.map(layer => normalizeLayer(layer)) : []
   };
 }
 

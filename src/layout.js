@@ -75,6 +75,8 @@ function calculateLayout(network) {
     calculateHorizontalLayout(network, layout);
   } else if (network.layout === 'vertical') {
     calculateVerticalLayout(network, layout);
+  } else if (network.layout === 'parallel-columns') {
+    calculateParallelColumnsLayout(network, layout);
   }
 
   return layout;
@@ -1647,8 +1649,9 @@ function calculateStackBlockLayout(block, layout, startX, startY, direction = 'h
 
   if (direction === 'vertical') {
     // 垂直布局
+    const titleHeight = LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.blockTitleGap;
     const contentStartX = startX + titleWidth;
-    const contentStartY = startY + padding;
+    const contentStartY = startY + titleHeight + padding;
 
     if (expand) {
       // 展开所有重复（垂直排列）
@@ -1784,6 +1787,430 @@ function calculateStackBlockLayout(block, layout, startX, startY, direction = 'h
       // 连接
       layout.connections = calculateConnections(layout.layers);
     }
+  }
+}
+
+/**
+ * 计算双列并排布局（parallel-columns）
+ * 用于编码器-解码器架构（如 Transformer）
+ * columns 数组定义每列的内容，每列是一个 section-like 结构
+ * 支持 crossConnections 定义跨列连接
+ * 支持 direction 参数：'top-down'（从上到下）或 'bottom-up'（从下到上）
+ */
+function calculateParallelColumnsLayout(network, layout) {
+  const layerWidth = LAYOUT_CONFIG.layerWidth;
+  const layerHeight = LAYOUT_CONFIG.layerHeight;
+  const layerGap = LAYOUT_CONFIG.layerGap;
+  const startX = LAYOUT_CONFIG.startX;
+  const startY = LAYOUT_CONFIG.startY;
+  const padding = LAYOUT_CONFIG.sectionPadding;
+  const columnGap = 60;  // 两列之间的间距
+  const direction = network.direction || 'top-down';  // 默认从上到下
+
+  const columns = network.columns || [];
+  if (columns.length === 0) return;
+
+  // 计算标题位置
+  layout.title.y = LAYOUT_CONFIG.fontSizeTitle + LAYOUT_CONFIG.titleGap;
+
+  // 先计算所有列的总高度，以便确定起始位置（bottom-up 模式需要）
+  let totalHeight = 0;
+  columns.forEach(column => {
+    let columnHeight = 0;
+    // 计算层的总高度
+    column.layers.forEach(layerDef => {
+      columnHeight += layerHeight + layerGap;
+    });
+    // 计算 blocks 的总高度
+    if (column.blocks) {
+      column.blocks.forEach(blockDef => {
+        const blockLayers = blockDef.layers || [];
+        const repeat = blockDef.repeat || 1;
+        const expand = blockDef.expand === true;
+        const blockLayerCount = expand ? blockLayers.length * repeat : blockLayers.length;
+        columnHeight += blockLayerCount * (layerHeight + layerGap) + padding * 2 + LAYOUT_CONFIG.fontSizeSection;
+      });
+    }
+    if (columnHeight > totalHeight) totalHeight = columnHeight;
+  });
+
+  // 记录每列的层和 blocks
+  const columnElements = [];
+  const columnBlocks = [];
+  let currentX = startX;
+  let maxY = startY;
+
+  // 处理每一列
+  columns.forEach((column, columnIndex) => {
+    const columnLayers = [];
+    const columnBlockList = [];
+
+    // 计算列标题区域
+    const columnTitleHeight = LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.sectionTitleGap;
+    const columnTitleY = direction === 'bottom-up'
+      ? startY + totalHeight - columnTitleHeight
+      : startY + LAYOUT_CONFIG.fontSizeSection;
+
+    // 处理列内的层和 blocks
+    let layerY;
+    if (direction === 'bottom-up') {
+      // 从下到上：输入在底部，向上排列
+      layerY = columnTitleY - LAYOUT_CONFIG.fontSizeSection - LAYOUT_CONFIG.sectionTitleGap;
+      // 先处理 blocks（向上排列）
+      if (column.blocks) {
+        column.blocks.forEach((blockDef, blockIndex) => {
+          const blockLayout = calculateBlockLayout(blockDef, currentX, layerY - layerHeight, 'vertical');
+          layout.blocks.push(blockLayout);
+          columnBlockList.push(blockLayout);
+
+          // 将 block 内部层添加到全局 layers 数组
+          blockLayout.layers.forEach(layer => {
+            layer.columnIndex = columnIndex;
+            layout.layers.push(layer);
+          });
+
+          layerY = blockLayout.y - layerGap;
+        });
+      }
+      // 然后处理层（向上排列）
+      column.layers.forEach((layerDef, layerIndex) => {
+        layerY -= layerHeight;
+        const layer = {
+          name: layerDef.name,
+          type: layerDef.type,
+          x: currentX + padding,
+          y: layerY,
+          width: layerWidth,
+          height: layerHeight,
+          data: layerDef,
+          columnIndex: columnIndex
+        };
+        layout.layers.push(layer);
+        columnLayers.push(layer);
+        layerY -= layerGap;
+      });
+    } else {
+      // 从上到下（默认）
+      layerY = columnTitleY + LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.sectionTitleGap;
+
+      column.layers.forEach((layerDef, layerIndex) => {
+        const layer = {
+          name: layerDef.name,
+          type: layerDef.type,
+          x: currentX + padding,
+          y: layerY,
+          width: layerWidth,
+          height: layerHeight,
+          data: layerDef,
+          columnIndex: columnIndex
+        };
+        layout.layers.push(layer);
+        columnLayers.push(layer);
+        layerY += layerHeight + layerGap;
+      });
+
+      // 处理列内的 blocks
+      if (column.blocks) {
+        column.blocks.forEach((blockDef, blockIndex) => {
+          const blockLayout = calculateBlockLayout(blockDef, currentX, layerY, 'vertical');
+          layout.blocks.push(blockLayout);
+          columnBlockList.push(blockLayout);
+
+          // 将 block 内部层添加到全局 layers 数组
+          blockLayout.layers.forEach(layer => {
+            layer.columnIndex = columnIndex;
+            layout.layers.push(layer);
+          });
+
+          layerY = blockLayout.y + blockLayout.height + layerGap;
+        });
+      }
+
+      // 处理列内的 layers_after_blocks
+      if (column.layersAfterBlocks && column.layersAfterBlocks.length > 0) {
+        column.layersAfterBlocks.forEach((layerDef, layerIndex) => {
+          const layer = {
+            name: layerDef.name,
+            type: layerDef.type,
+            x: currentX + padding,
+            y: layerY,
+            width: layerWidth,
+            height: layerHeight,
+            data: layerDef,
+            columnIndex: columnIndex
+          };
+          layout.layers.push(layer);
+          columnLayers.push(layer);
+          layerY += layerHeight + layerGap;
+        });
+      }
+    }
+
+    // 计算列的高度和宽度
+    const columnHeight = layerY - startY;
+
+    // 列宽度：需要比 Block 宽度大 2*padding，以保持间距
+    let columnWidth = layerWidth + padding * 2;
+    columnBlockList.forEach(block => {
+      // Section 框应该比 Block 框大，左右各留 padding 间距
+      const requiredWidth = block.width + padding * 2;
+      if (requiredWidth > columnWidth) {
+        columnWidth = requiredWidth;
+      }
+    });
+
+    // 计算居中偏移量：使所有元素在 Section 框内居中
+    const layerOffsetX = (columnWidth - layerWidth) / 2;
+
+    // 调整列层的 x 坐标，使其居中
+    columnLayers.forEach(layer => {
+      layer.x = currentX + layerOffsetX;
+    });
+
+    // 调整 block 的 x 坐标，使其在列框内居中
+    // 同时调整 block 内层的 x 坐标，使其与 block 框对齐
+    columnBlockList.forEach(block => {
+      // Block 在 Section 框内居中
+      const blockOffsetX = (columnWidth - block.width) / 2;
+      block.x = currentX + blockOffsetX;
+
+      // 调整 block 内层的 x 坐标，使其与 block 框对齐
+      // 原始内层 x 是基于 currentX 计算的，现在需要加上 blockOffsetX
+      block.layers.forEach(layer => {
+        layer.x += blockOffsetX;
+      });
+
+      // 重新计算 block 内部的连接（因为层 x 坐标已调整）
+      if (block.connections && block.connections.length > 0) {
+        block.connections.forEach(conn => {
+          const fromLayer = block.layers.find(l => l.name === conn.from);
+          const toLayer = block.layers.find(l => l.name === conn.to);
+          if (fromLayer && toLayer) {
+            conn.x1 = fromLayer.x + fromLayer.width / 2;
+            conn.x2 = toLayer.x + toLayer.width / 2;
+          }
+        });
+      }
+    });
+
+    // 记录列信息
+    columnElements.push(columnLayers);
+    columnBlocks.push(columnBlockList);
+
+    // 添加 section 框（列框）
+    layout.sections.push({
+      name: column.name,
+      x: currentX,
+      y: startY,
+      width: columnWidth,
+      height: columnHeight,
+      titleY: columnTitleY,
+      strokeColor: columnIndex % 2 === 0 ? '#b8d8e8' : '#b8e8c8',
+      columnIndex: columnIndex
+    });
+
+    // 更新下一列的起始 X
+    currentX += columnWidth + columnGap;
+
+    // 更 maxY
+    if (layerY > maxY) maxY = layerY;
+  });
+
+  // 计算总尺寸
+  layout.width = currentX - columnGap + startX;
+  layout.height = maxY + LAYOUT_CONFIG.bottomPadding;
+  layout.title.x = layout.width / 2;
+
+  // 计算每列内部的连接（垂直方向）
+  // 使用 y 坐标来区分同名层，避免重复
+  const connectionSet = new Set();
+
+  // 先添加 block 内部连接（它们由 block 自己管理）
+  columnBlocks.forEach((blocks, columnIndex) => {
+    blocks.forEach(block => {
+      if (block.connections && block.connections.length > 0) {
+        block.connections.forEach(conn => {
+          // 使用坐标来区分同名层
+          const fromLayer = block.layers.find(l => l.name === conn.from);
+          const toLayer = block.layers.find(l => l.name === conn.to);
+          if (!fromLayer || !toLayer) return;
+
+          const connKey = `${conn.from}@${fromLayer.y}->${conn.to}@${toLayer.y}`;
+          if (connectionSet.has(connKey)) return;
+          connectionSet.add(connKey);
+          layout.connections.push(conn);
+        });
+      }
+    });
+  });
+
+  // 然后计算列内其他连接（跳过 block 内部的层）
+  columnElements.forEach((layers, columnIndex) => {
+    // 获取该列的所有层（按顺序）
+    const allColumnLayers = layout.layers.filter(l => l.columnIndex === columnIndex);
+    // 按 y 坐标排序（从上到下）
+    allColumnLayers.sort((a, b) => a.y - b.y);
+
+    // 计算 block 内层的 y 坐标范围
+    const blockLayerYs = new Set();
+    columnBlocks[columnIndex].forEach(block => {
+      block.layers.forEach(l => blockLayerYs.add(l.y));
+    });
+
+    // 计算相邻层之间的连接（跳过 block 内部的层）
+    for (let i = 0; i < allColumnLayers.length - 1; i++) {
+      const from = allColumnLayers[i];
+      const to = allColumnLayers[i + 1];
+
+      // 跳过 block 内部的层
+      if (blockLayerYs.has(from.y) && blockLayerYs.has(to.y)) {
+        continue;
+      }
+
+      // 创建连接的唯一标识（使用 y 坐标区分同名层）
+      const connKey = `${from.name}@${from.y}->${to.name}@${to.y}`;
+      if (connectionSet.has(connKey)) continue;
+      connectionSet.add(connKey);
+
+      // 对于垂直连线，使用目标层的 x 中心坐标，确保连线垂直
+      // 这样可以处理不同宽度的层之间的连接
+      const targetCenterX = to.x + to.width / 2;
+
+      layout.connections.push({
+        from: from.name,
+        to: to.name,
+        x1: targetCenterX,
+        y1: from.y + from.height,
+        x2: targetCenterX,
+        y2: to.y,
+        type: 'sequential'
+      });
+    }
+  });
+
+  // 处理跨列连接（crossConnections）
+  if (network.crossConnections) {
+    layout.crossConnections = [];
+    network.crossConnections.forEach(crossConn => {
+      // 找到源层
+      const fromLayer = layout.layers.find(l => l.name === crossConn.from || l.data.id === crossConn.from);
+      if (!fromLayer) return;
+
+      // 支持单终点和多终点
+      const toList = Array.isArray(crossConn.to) ? crossConn.to : [crossConn.to];
+      const labels = crossConn.labels || [];
+
+      // 计算源层右侧中心
+      const fromX = fromLayer.x + fromLayer.width;
+      const fromY = fromLayer.y + fromLayer.height / 2;
+
+      // 计算分叉点（在两列之间的空隙）
+      const branchGap = LAYOUT_CONFIG.layerGap;
+
+      // 找到所有目标层
+      const targetLayers = toList.map(toName =>
+        layout.layers.find(l => l.name === toName || l.data.id === toName)
+      ).filter(l => l);
+
+      if (targetLayers.length === 0) return;
+
+      // 计算分叉点的 x 坐标（在源层和目标层之间）
+      const avgToX = targetLayers.reduce((sum, l) => sum + l.x, 0) / targetLayers.length;
+      const forkX = (fromX + avgToX) / 2;
+
+      // 先添加共享的横线（从源层右侧到分叉点）
+      layout.crossConnections.push({
+        from: crossConn.from,
+        to: crossConn.to,
+        points: [
+          { x: fromX, y: fromY },
+          { x: forkX, y: fromY }
+        ],
+        isSharedLine: true,
+        mainLabel: crossConn.label_position || crossConn.label
+      });
+
+      // 然后添加各分支线（从分叉点开始，垂直展开后向左）
+      const totalWidth = (toList.length - 1) * branchGap;
+
+      toList.forEach((toName, index) => {
+        const toLayer = layout.layers.find(l => l.name === toName || l.data.id === toName);
+        if (!toLayer) return;
+
+        const toX = toLayer.x;
+        const toY = toLayer.y + toLayer.height / 2;
+
+        // 计算垂直偏移（使多条线在分叉点处垂直展开）
+        const branchOffsetY = index * branchGap - totalWidth / 2;
+        const branchY = toY + branchOffsetY;  // 使用目标层的 y 坐标加上偏移
+
+        layout.crossConnections.push({
+          from: crossConn.from,
+          to: toName,
+          points: [
+            { x: forkX, y: fromY },
+            { x: forkX, y: branchY },
+            { x: toX, y: branchY }
+          ],
+          label: labels[index] || null,
+          isSharedLine: false
+        });
+      });
+    });
+  }
+
+  // 处理分叉连接（forkConnections）
+  // 用于从单个层输出分叉到多个标注（如 Q, K, V）
+  if (network.forkConnections && network.forkConnections.length > 0) {
+    layout.forkConnections = [];
+    network.forkConnections.forEach(forkConn => {
+      // 找到源层
+      const fromLayer = layout.layers.find(l => l.name === forkConn.from || l.data.id === forkConn.from);
+      if (!fromLayer) return;
+
+      // 找到目标层（单个目标）
+      const toLayer = layout.layers.find(l => l.name === forkConn.to || l.data.id === forkConn.to);
+      if (!toLayer) return;
+
+      // 获取标注列表
+      const labels = forkConn.labels || [];
+      if (labels.length === 0) return;
+
+      // 计算源层底部中心
+      const fromX = fromLayer.x + fromLayer.width / 2;
+      const fromY = fromLayer.y + fromLayer.height;
+
+      // 计算目标层顶部中心
+      const toX = toLayer.x + toLayer.width / 2;
+      const toY = toLayer.y;
+
+      // 计算分叉点（在源层和目标层之间的中间位置）
+      const forkY = (fromY + toY) / 2;
+
+      // 计算每条分叉线的水平偏移
+      const branchGap = LAYOUT_CONFIG.layerGap;
+      const totalWidth = (labels.length - 1) * branchGap;
+      const startX = toX - totalWidth / 2;
+
+      // 创建分叉连接
+      labels.forEach((label, index) => {
+        const branchX = startX + index * branchGap;
+
+        layout.forkConnections.push({
+          from: forkConn.from,
+          to: forkConn.to,
+          points: [
+            { x: fromX, y: fromY },
+            { x: fromX, y: forkY },
+            { x: branchX, y: forkY },
+            { x: branchX, y: toY }
+          ],
+          label: label,
+          labelX: branchX,
+          labelY: forkY - branchGap / 2
+        });
+      });
+    });
   }
 }
 

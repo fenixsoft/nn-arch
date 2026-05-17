@@ -46,6 +46,21 @@ const SVG_CONFIG = {
 // 直接使用 globalThis.COLLAPSED_CONFIG，不重新声明以避免与 layout.js 的 const 冲突
 
 /**
+ * 转义 XML 特殊字符
+ * @param {string} text - 原始文本
+ * @returns {string} 转义后的文本
+ */
+function escapeXml(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/**
  * 生成 SVG 字符串
  * @param {object} layout - 布局结果
  * @returns {string} SVG 字符串
@@ -132,6 +147,20 @@ function generateSvg(layout) {
     svgParts.push(generateRowConnection(conn));
   });
 
+  // 跨列连接（用于 parallel-columns 布局）
+  if (layout.crossConnections && layout.crossConnections.length > 0) {
+    layout.crossConnections.forEach(conn => {
+      svgParts.push(generateCrossConnection(conn));
+    });
+  }
+
+  // 分叉连接（用于 Q, K, V 等分叉）
+  if (layout.forkConnections && layout.forkConnections.length > 0) {
+    layout.forkConnections.forEach(conn => {
+      svgParts.push(generateForkConnection(conn));
+    });
+  }
+
   // SVG 结尾
   svgParts.push('</svg>');
 
@@ -157,7 +186,7 @@ function generateDefs() {
  * 生成标题
  */
 function generateTitle(title) {
-  return `<text x="${title.x}" y="${title.y}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeTitle}" font-weight="bold" font-family="Arial, sans-serif" fill="#333">${title.text}</text>`;
+  return `<text x="${title.x}" y="${title.y}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeTitle}" font-weight="bold" font-family="Arial, sans-serif" fill="#333">${escapeXml(title.text)}</text>`;
 }
 
 /**
@@ -231,7 +260,7 @@ function generateLayerContent(layer) {
   // 层名称（上方增加空隙）
   const nameY = layer.y + SVG_CONFIG.nameGap + SVG_CONFIG.fontSizeName;
   // 名称可能包含附加信息（+Pool, +Dropout）
-  const displayName = getDisplayName(layer);
+  const displayName = escapeXml(getDisplayName(layer));
   let content = `<text x="${centerX}" y="${nameY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeName}" font-weight="bold" font-family="Arial, sans-serif" fill="#333">${displayName}</text>`;
 
   // 参数详情（name下方增加空隙）
@@ -454,7 +483,7 @@ function generateBlock(block) {
     titleText = `${block.name} ×${block.repeat}`;
   }
   const titleY = block.titleY || (block.y + SVG_CONFIG.fontSizeSection);
-  parts.push(`<text x="${centerX}" y="${titleY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeSection}" font-weight="bold" font-family="Arial, sans-serif" fill="#333">${titleText}</text>`);
+  parts.push(`<text x="${centerX}" y="${titleY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeSection}" font-weight="bold" font-family="Arial, sans-serif" fill="#333">${escapeXml(titleText)}</text>`);
 
   // 内部层
   if (block.layers) {
@@ -757,6 +786,74 @@ function wrapText(text, maxChars) {
   return lines;
 }
 
+/**
+ * 生成跨列连接（用于 parallel-columns 布局）
+ * @param {object} conn - 连接信息，包含 points 数组和可选的 label
+ * @returns {string} SVG 字符串
+ */
+function generateCrossConnection(conn) {
+  const parts = [];
+  const points = conn.points;
+  if (!points || points.length < 2) return '';
+
+  // 构建折线路径
+  let d = `M${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    d += ` L${points[i].x} ${points[i].y}`;
+  }
+
+  // 共享线不画箭头，分支线画箭头
+  if (conn.isSharedLine) {
+    parts.push(`<path d="${d}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none"/>`);
+    // 如果有主要标签（如 "Encoder Output"），放在共享线上方
+    if (conn.mainLabel) {
+      const midX = (points[0].x + points[points.length - 1].x) / 2;
+      const y = points[0].y - SVG_CONFIG.fontSizeDetail;
+      parts.push(`<text x="${midX}" y="${y}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeDetail}" font-family="Arial, sans-serif" fill="#666">${conn.mainLabel}</text>`);
+    }
+  } else {
+    parts.push(`<path d="${d}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+    // 如果有分叉标签（如 K, V）
+    if (conn.label) {
+      const midIndex = Math.floor(points.length / 2);
+      const midPoint = points[midIndex];
+      parts.push(`<text x="${midPoint.x - SVG_CONFIG.fontSizeDetail}" y="${midPoint.y}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeDetail}" font-weight="bold" font-family="Arial, sans-serif" fill="#666">${conn.label}</text>`);
+    }
+  }
+
+  return parts.join('\n');
+}
+
+/**
+ * 生成分叉连接（用于 Q, K, V 等分叉）
+ * @param {object} conn - 连接信息，包含 points 数组和可选的 label
+ * @returns {string} SVG 字符串
+ */
+function generateForkConnection(conn) {
+  const parts = [];
+  const points = conn.points;
+  if (!points || points.length < 2) return '';
+
+  // 构建折线路径
+  let d = `M${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    d += ` L${points[i].x} ${points[i].y}`;
+  }
+
+  // 绘制折线（带箭头）
+  parts.push(`<path d="${d}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+
+  // 如果有标注文本（Q, K, V 等）
+  if (conn.label) {
+    // 标注放在分叉位置
+    if (conn.labelX !== undefined && conn.labelY !== undefined) {
+      parts.push(`<text x="${conn.labelX}" y="${conn.labelY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeDetail}" font-weight="bold" font-family="Arial, sans-serif" fill="#666">${conn.label}</text>`);
+    }
+  }
+
+  return parts.join('\n');
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     generateSvg,
@@ -779,6 +876,8 @@ if (typeof module !== 'undefined' && module.exports) {
     getDisplayName,
     getLayerDetail,
     COLORS,
-    SVG_CONFIG
+    SVG_CONFIG,
+    generateCrossConnection,
+    generateForkConnection
   };
 }
