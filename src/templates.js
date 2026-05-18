@@ -159,6 +159,7 @@ columns:
         type: stack
         repeat: 6
         expand: false
+        show_title: false
         layers:
           - {id: enc_mha, name: Multi-Head Attention, type: attention, size: ""}
           - {id: enc_add1, name: Add & Norm, type: norm, size: ""}
@@ -173,6 +174,7 @@ columns:
         type: stack
         repeat: 6
         expand: false
+        show_title: false
         layers:
           - {id: dec_masked_mha, name: Masked Multi-Head Attention, type: attention, size: ""}
           - {id: dec_add1, name: Add & Norm, type: norm, size: ""}

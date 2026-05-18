@@ -224,7 +224,8 @@ function normalizeBlock(block) {
     act: block.act || null,
     norm: block.norm || null,
     style: block.style || 'arc',
-    expand: block.expand || false
+    expand: block.expand || false,
+    showTitle: block.show_title !== false && block.showTitle !== false
   };
 
   // 对于简单层类型的block（如pool, conv, fc），保留所有原始层属性

@@ -68,6 +68,20 @@ test('全连接层包含绿色样式', function() {
   assertEqual(svg.includes('#5bd9a5'), true, '包含FC层边框色');
 });
 
+test('activation 层显示 size 内容', function() {
+  const layout = {
+    width: 200, height: 120,
+    title: { x: 100, y: 25, text: 'Test' },
+    sections: [],
+    layers: [{name: 'Softmax', type: 'activation', x: 10, y: 40, width: 216, height: 126, data: {size: 'normalized probabilities'}}],
+    connections: [],
+    rowConnections: [],
+    blocks: []
+  };
+  const svg = generateSvg(layout);
+  assertEqual(svg.includes('normalized probabilities'), true, 'activation 层应显示 size');
+});
+
 test('section标题为粗体', function() {
   const layout = {
     width: 500, height: 200,
@@ -85,6 +99,26 @@ test('section标题为粗体', function() {
   };
   const svg = generateSvg(layout);
   assertEqual(svg.includes('font-weight="bold"'), true, 'section标题包含粗体样式');
+});
+
+test('section 标题可使用 middle 基线垂直居中', function() {
+  const layout = {
+    width: 500, height: 200,
+    title: { x: 250, y: 30, text: 'Test' },
+    sections: [{
+      name: 'Encoder',
+      x: 10, y: 50, width: 480, height: 100,
+      titleY: 75,
+      titleBaseline: 'middle',
+      strokeColor: '#b8d8e8'
+    }],
+    layers: [],
+    connections: [],
+    rowConnections: [],
+    blocks: []
+  };
+  const svg = generateSvg(layout);
+  assertEqual(svg.includes('dominant-baseline="middle"'), true, 'section标题应支持 middle 基线');
 });
 
 test('显示 pool 信息', function() {
@@ -452,6 +486,15 @@ layers_after_blocks:
   assertEqual(svg.includes('Embedding'), true, 'Transformer SVG 包含 Embedding 层');
   assertEqual(svg.includes('512 tokens'), true, 'Transformer SVG 显示 Input size');
   assertEqual(svg.includes('#f8f8e8'), true, 'Transformer SVG 包含 embedding 层颜色');
+});
+
+test('Transformer Architecture hides encoder and decoder block titles', function() {
+  const network = parseNetworkYaml(getTemplate('transformer_full'));
+  const layout = calculateLayout(network);
+  const svg = generateSvg(layout);
+
+  assertEqual(svg.includes('Encoder Block'), false, 'Encoder Block title should not be rendered');
+  assertEqual(svg.includes('Decoder Block'), false, 'Decoder Block title should not be rendered');
 });
 
 test('生成含 blocks 的完整网络 SVG', function() {

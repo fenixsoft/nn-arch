@@ -1,0 +1,91 @@
+<svg viewBox="0 0 834 1573.4" width="2502" height="4720" xmlns="http://www.w3.org/2000/svg">
+
+  <defs>
+    <marker id="arrowhead" markerWidth="7.2" markerHeight="5.4" refX="6.3" refY="2.7" orient="auto">
+      <polygon points="0 0, 7.2 2.7, 0 5.4" fill="#999"/>
+    </marker>
+    <marker id="arrowhead-collapsed" markerWidth="3.6" markerHeight="2.7" refX="3.15" refY="1.35" orient="auto">
+      <polygon points="0 0, 3.6 1.35, 0 2.7" fill="#999"/>
+    </marker>
+  </defs>
+<rect width="834" height="1573.4" fill="#ffffff"/>
+<text x="417" y="54" text-anchor="middle" font-size="36" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Transformer Architecture</text>
+<rect x="63" y="81" width="324" height="874.4" fill="none" stroke="#b8d8e8" stroke-width="3.6" stroke-dasharray="9,9" rx="18"/>
+<text x="225" y="108.7" text-anchor="middle" dominant-baseline="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#5a7d9a">Encoder</text>
+<rect x="447" y="81" width="324" height="1486.4" fill="none" stroke="#b8e8c8" stroke-width="3.6" stroke-dasharray="9,9" rx="18"/>
+<text x="609" y="108.7" text-anchor="middle" dominant-baseline="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#5a7d9a">Decoder</text>
+
+<rect x="117" y="136.4" width="216" height="126" fill="#f8f8e8" stroke="#d9a55b" stroke-width="3.6" rx="14.4"/>
+<text x="225" y="173.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Input Embedding</text><text x="225" y="207.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">+Positional Encoding</text>
+
+<rect x="501" y="136.4" width="216" height="126" fill="#f8f8e8" stroke="#d9a55b" stroke-width="3.6" rx="14.4"/>
+<text x="609" y="173.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Output Embedding</text><text x="609" y="207.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">+Positional Encoding</text>
+
+<rect x="501" y="1261.4" width="216" height="126" fill="#fff8f0" stroke="#f0a559" stroke-width="3.6" rx="14.4"/>
+<text x="609" y="1298.6000000000001" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Linear</text>
+
+<rect x="501" y="1414.4" width="216" height="126" fill="#f8f0e8" stroke="#d9b559" stroke-width="3.6" rx="14.4"/>
+<text x="609" y="1451.6000000000001" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Softmax</text>
+<rect x="90" y="289.4" width="270" height="639" fill="#f8f8e8" stroke="#d9b559" stroke-width="3.6" stroke-dasharray="9,9" rx="14.4"/>
+
+<rect x="117" y="316.4" width="216" height="126" fill="#e8f0f8" stroke="#5990d9" stroke-width="3.6" rx="14.4"/>
+<text x="225" y="353.59999999999997" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Multi-Head Attention</text><text x="225" y="387.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">heads=N/A</text>
+
+<rect x="117" y="469.4" width="216" height="126" fill="#f8e8f8" stroke="#d959f0" stroke-width="3.6" rx="14.4"/>
+<text x="225" y="506.59999999999997" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Add &amp; Norm</text>
+
+<rect x="117" y="622.4" width="216" height="126" fill="#fff8f0" stroke="#f0a559" stroke-width="3.6" rx="14.4"/>
+<text x="225" y="659.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Feed Forward</text>
+
+<rect x="117" y="775.4" width="216" height="126" fill="#f8e8f8" stroke="#d959f0" stroke-width="3.6" rx="14.4"/>
+<text x="225" y="812.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Add &amp; Norm</text>
+<rect x="474" y="289.4" width="270" height="945.0000000000001" fill="#f8f8e8" stroke="#d9b559" stroke-width="3.6" stroke-dasharray="9,9" rx="14.4"/>
+
+<rect x="501" y="316.4" width="216" height="126" fill="#e8f0f8" stroke="#5990d9" stroke-width="3.6" rx="14.4"/>
+<text x="609" y="353.59999999999997" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Masked Multi-Head Attention</text><text x="609" y="387.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">heads=N/A</text>
+
+<rect x="501" y="469.4" width="216" height="126" fill="#f8e8f8" stroke="#d959f0" stroke-width="3.6" rx="14.4"/>
+<text x="609" y="506.59999999999997" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Add &amp; Norm</text>
+
+<rect x="501" y="622.4" width="216" height="126" fill="#e8f0f8" stroke="#5990d9" stroke-width="3.6" rx="14.4"/>
+<text x="609" y="659.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Multi-Head Attention</text><text x="609" y="693.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">heads=N/A</text>
+
+<rect x="501" y="775.4" width="216" height="126" fill="#f8e8f8" stroke="#d959f0" stroke-width="3.6" rx="14.4"/>
+<text x="609" y="812.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Add &amp; Norm</text>
+
+<rect x="501" y="928.4" width="216" height="126" fill="#fff8f0" stroke="#f0a559" stroke-width="3.6" rx="14.4"/>
+<text x="609" y="965.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Feed Forward</text>
+
+<rect x="501" y="1081.4" width="216" height="126" fill="#f8e8f8" stroke="#d959f0" stroke-width="3.6" rx="14.4"/>
+<text x="609" y="1118.6000000000001" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Add &amp; Norm</text>
+<path d="M225 442.4 L225 469.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M225 595.4 L225 622.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M225 748.4 L225 775.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M609 442.4 L609 469.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M609 595.4 L609 622.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M609 748.4 L609 775.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M609 901.4 L609 928.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M609 1054.4 L609 1081.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M609 1207.4 L609 1261.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M609 1387.4 L609 1414.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<path d="M333 838.4 L417 838.4" stroke="#999" stroke-width="2.7" fill="none"/>
+<text x="375" y="816.8" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">Encoder Output</text>
+<path d="M417 838.4 L417 671.9 L501 671.9" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<text x="395.4" y="671.9" text-anchor="middle" font-size="21.6" font-weight="bold" font-family="Arial, sans-serif" fill="#666">K</text>
+<path d="M417 838.4 L417 698.9 L501 698.9" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<text x="395.4" y="698.9" text-anchor="middle" font-size="21.6" font-weight="bold" font-family="Arial, sans-serif" fill="#666">V</text>
+<path d="M225 262.4 L225 289.4" stroke="#999" stroke-width="2.7" fill="none"/>
+<path d="M225 289.4 L198 289.4 L198 316.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<text x="198" y="275.9" text-anchor="middle" font-size="21.6" font-weight="bold" font-family="Arial, sans-serif" fill="#666">Q</text>
+<path d="M225 289.4 L225 316.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<text x="225" y="275.9" text-anchor="middle" font-size="21.6" font-weight="bold" font-family="Arial, sans-serif" fill="#666">K</text>
+<path d="M225 289.4 L252 289.4 L252 316.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<text x="252" y="275.9" text-anchor="middle" font-size="21.6" font-weight="bold" font-family="Arial, sans-serif" fill="#666">V</text>
+<path d="M609 262.4 L609 289.4" stroke="#999" stroke-width="2.7" fill="none"/>
+<path d="M609 289.4 L582 289.4 L582 316.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<text x="582" y="275.9" text-anchor="middle" font-size="21.6" font-weight="bold" font-family="Arial, sans-serif" fill="#666">Q</text>
+<path d="M609 289.4 L609 316.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<text x="609" y="275.9" text-anchor="middle" font-size="21.6" font-weight="bold" font-family="Arial, sans-serif" fill="#666">K</text>
+<path d="M609 289.4 L636 289.4 L636 316.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<text x="636" y="275.9" text-anchor="middle" font-size="21.6" font-weight="bold" font-family="Arial, sans-serif" fill="#666">V</text>
+</svg>

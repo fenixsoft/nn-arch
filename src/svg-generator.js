@@ -195,8 +195,9 @@ function generateTitle(title) {
 function generateSection(section) {
   const strokeColor = section.strokeColor || '#b8d8e8';
   const titleY = section.titleY || (section.y + SVG_CONFIG.fontSizeSection);
+  const baseline = section.titleBaseline ? ` dominant-baseline="${section.titleBaseline}"` : '';
   return `<rect x="${section.x}" y="${section.y}" width="${section.width}" height="${section.height}" fill="none" stroke="${strokeColor}" stroke-width="${SVG_CONFIG.strokeWidth}" stroke-dasharray="${9},${9}" rx="${SVG_CONFIG.cornerRadius * 1.25}"/>
-<text x="${section.x + section.width / 2}" y="${titleY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeSection}" font-weight="bold" font-family="Arial, sans-serif" fill="#5a7d9a">${section.name}</text>`;
+<text x="${section.x + section.width / 2}" y="${titleY}" text-anchor="middle"${baseline} font-size="${SVG_CONFIG.fontSizeSection}" font-weight="bold" font-family="Arial, sans-serif" fill="#5a7d9a">${section.name}</text>`;
 }
 
 /**
@@ -330,6 +331,8 @@ function getLayerDetail(layer) {
     case 'embedding':
       return data.size;
     case 'rnn':
+      return data.size;
+    case 'activation':
       return data.size;
     case 'attention':
       return data.size || `heads=${data.heads || 'N/A'}`;
@@ -477,13 +480,15 @@ function generateBlock(block) {
   parts.push(`<rect x="${block.x}" y="${block.y}" width="${block.width}" height="${block.height}" fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="${strokeWidth}" stroke-dasharray="${9},${9}" rx="${cornerRadius}"/>`);
 
   // 标题（block 名称或带重复标记）
-  // 显示 ×N 当：expand !== true (即 false、collapsed 或 undefined/默认值) 且 repeat > 1
-  let titleText = block.name;
-  if (block.type === 'stack' && block.expand !== true && block.repeat > 1) {
-    titleText = `${block.name} ×${block.repeat}`;
+  if (block.showTitle !== false) {
+    // 显示 ×N 当：expand !== true (即 false、collapsed 或 undefined/默认值) 且 repeat > 1
+    let titleText = block.name;
+    if (block.type === 'stack' && block.expand !== true && block.repeat > 1) {
+      titleText = `${block.name} ×${block.repeat}`;
+    }
+    const titleY = block.titleY || (block.y + SVG_CONFIG.fontSizeSection);
+    parts.push(`<text x="${centerX}" y="${titleY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeSection}" font-weight="bold" font-family="Arial, sans-serif" fill="#333">${escapeXml(titleText)}</text>`);
   }
-  const titleY = block.titleY || (block.y + SVG_CONFIG.fontSizeSection);
-  parts.push(`<text x="${centerX}" y="${titleY}" text-anchor="middle" font-size="${SVG_CONFIG.fontSizeSection}" font-weight="bold" font-family="Arial, sans-serif" fill="#333">${escapeXml(titleText)}</text>`);
 
   // 内部层
   if (block.layers) {
@@ -840,8 +845,9 @@ function generateForkConnection(conn) {
     d += ` L${points[i].x} ${points[i].y}`;
   }
 
-  // 绘制折线（带箭头）
-  parts.push(`<path d="${d}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none" marker-end="url(#arrowhead)"/>`);
+  // Shared fork trunks are drawn once without an arrowhead; branch paths keep their arrowheads.
+  const arrow = conn.isSharedLine ? '' : ' marker-end="url(#arrowhead)"';
+  parts.push(`<path d="${d}" stroke="#999" stroke-width="${SVG_CONFIG.arrowWidth}" fill="none"${arrow}/>`);
 
   // 如果有标注文本（Q, K, V 等）
   if (conn.label) {

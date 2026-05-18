@@ -941,13 +941,14 @@ function calculateBlockLayout(block, startX, startY, direction = 'horizontal') {
     merge: block.merge,
     act: block.act,
     norm: block.norm,
+    showTitle: block.showTitle !== false,
     direction: direction,
     collapsed: block.expand === 'collapsed',
     x: startX,
     y: startY,
     width: 0,
     height: 0,
-    titleY: startY + LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.blockTitleGap / 2,
+    titleY: block.showTitle === false ? null : startY + LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.blockTitleGap / 2,
     layers: [],
     connections: [],
     skipConnection: null,
@@ -1640,18 +1641,21 @@ function calculateStackBlockLayout(block, layout, startX, startY, direction = 'h
   const layers = block.layers || [];
   const repeat = block.repeat || 1;
   const expand = block.expand === true;
+  const showTitle = block.showTitle !== false;
 
   if (layers.length === 0) return;
 
   // 标题区域高度/宽度（使用 collapsed-aware gap）
-  const titleHeight = LAYOUT_CONFIG.fontSizeSection + (layout.collapsed ? COLLAPSED_CONFIG.titleGap : LAYOUT_CONFIG.blockTitleGap);
+  const titleHeight = showTitle
+    ? LAYOUT_CONFIG.fontSizeSection + (layout.collapsed ? COLLAPSED_CONFIG.titleGap : LAYOUT_CONFIG.blockTitleGap)
+    : 0;
   const titleWidth = LAYOUT_CONFIG.fontSizeSection + (layout.collapsed ? COLLAPSED_CONFIG.titleGap : LAYOUT_CONFIG.blockTitleGap);
 
   if (direction === 'vertical') {
     // 垂直布局
-    const titleHeight = LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.blockTitleGap;
-    const contentStartX = startX + titleWidth;
-    const contentStartY = startY + titleHeight + padding;
+    const verticalTitleHeight = showTitle ? LAYOUT_CONFIG.fontSizeSection + LAYOUT_CONFIG.blockTitleGap : 0;
+    const contentStartX = startX + padding;
+    const contentStartY = startY + verticalTitleHeight + padding;
 
     if (expand) {
       // 展开所有重复（垂直排列）
@@ -1680,7 +1684,7 @@ function calculateStackBlockLayout(block, layout, startX, startY, direction = 'h
         }
       }
 
-      layout.width = titleWidth + layerWidth + padding;
+      layout.width = padding + layerWidth + padding;
       layout.height = currentY - layerGap + padding - startY;
 
       // 连接（垂直）
@@ -1704,7 +1708,7 @@ function calculateStackBlockLayout(block, layout, startX, startY, direction = 'h
         currentY += layerHeight + layerGap;
       });
 
-      layout.width = titleWidth + layerWidth + padding;
+      layout.width = padding + layerWidth + padding;
       layout.height = currentY - layerGap + padding - startY;
 
       // 重复标记
@@ -1721,7 +1725,8 @@ function calculateStackBlockLayout(block, layout, startX, startY, direction = 'h
   } else {
     // 水平布局（原有逻辑）
     const contentStartX = startX + padding;
-    const contentStartY = startY + titleHeight;
+    const contentTop = showTitle ? titleHeight : padding;
+    const contentStartY = startY + contentTop;
 
     if (expand) {
       // 展开所有重复
@@ -1751,7 +1756,7 @@ function calculateStackBlockLayout(block, layout, startX, startY, direction = 'h
       }
 
       layout.width = currentX - layerGap + padding - startX;
-      layout.height = titleHeight + layerHeight + padding;
+      layout.height = contentTop + layerHeight + padding;
 
       // 连接
       layout.connections = calculateConnections(layout.layers);
@@ -1775,7 +1780,7 @@ function calculateStackBlockLayout(block, layout, startX, startY, direction = 'h
       });
 
       layout.width = currentX - layerGap + padding - startX;
-      layout.height = titleHeight + layerHeight + padding;
+      layout.height = contentTop + layerHeight + padding;
 
       // 重复标记
       layout.repeatMarker = {
@@ -1828,7 +1833,8 @@ function calculateParallelColumnsLayout(network, layout) {
         const repeat = blockDef.repeat || 1;
         const expand = blockDef.expand === true;
         const blockLayerCount = expand ? blockLayers.length * repeat : blockLayers.length;
-        columnHeight += blockLayerCount * (layerHeight + layerGap) + padding * 2 + LAYOUT_CONFIG.fontSizeSection;
+        const blockTitleHeight = blockDef.showTitle === false ? 0 : LAYOUT_CONFIG.fontSizeSection;
+        columnHeight += blockLayerCount * (layerHeight + layerGap) + padding * 2 + blockTitleHeight;
       });
     }
     if (columnHeight > totalHeight) totalHeight = columnHeight;
@@ -1993,6 +1999,14 @@ function calculateParallelColumnsLayout(network, layout) {
       }
     });
 
+    const firstElementTop = Math.min(
+      ...columnLayers.map(layer => layer.y),
+      ...columnBlockList.map(block => block.y)
+    );
+    const sectionTitleY = Number.isFinite(firstElementTop)
+      ? (startY + firstElementTop) / 2
+      : columnTitleY;
+
     // 记录列信息
     columnElements.push(columnLayers);
     columnBlocks.push(columnBlockList);
@@ -2004,7 +2018,8 @@ function calculateParallelColumnsLayout(network, layout) {
       y: startY,
       width: columnWidth,
       height: columnHeight,
-      titleY: columnTitleY,
+      titleY: sectionTitleY,
+      titleBaseline: 'middle',
       strokeColor: columnIndex % 2 === 0 ? '#b8d8e8' : '#b8e8c8',
       columnIndex: columnIndex
     });
@@ -2020,6 +2035,14 @@ function calculateParallelColumnsLayout(network, layout) {
   layout.width = currentX - columnGap + startX;
   layout.height = maxY + LAYOUT_CONFIG.bottomPadding;
   layout.title.x = layout.width / 2;
+
+  const forkConnections = network.forkConnections || [];
+  const layerMatchesRef = (layer, ref) =>
+    layer && ref && (layer.name === ref || (layer.data && layer.data.id === ref));
+  const hasForkConnection = (fromLayer, toLayer) =>
+    forkConnections.some(forkConn =>
+      layerMatchesRef(fromLayer, forkConn.from) && layerMatchesRef(toLayer, forkConn.to)
+    );
 
   // 计算每列内部的连接（垂直方向）
   // 使用 y 坐标来区分同名层，避免重复
@@ -2064,6 +2087,11 @@ function calculateParallelColumnsLayout(network, layout) {
 
       // 跳过 block 内部的层
       if (blockLayerYs.has(from.y) && blockLayerYs.has(to.y)) {
+        continue;
+      }
+
+      // fork_connections take over this edge so the Q/K/V fan-out is drawn once.
+      if (hasForkConnection(from, to)) {
         continue;
       }
 
@@ -2176,13 +2204,13 @@ function calculateParallelColumnsLayout(network, layout) {
       const labels = forkConn.labels || [];
       if (labels.length === 0) return;
 
-      // 计算源层底部中心
-      const fromX = fromLayer.x + fromLayer.width / 2;
+      // 计算源层底部
       const fromY = fromLayer.y + fromLayer.height;
 
       // 计算目标层顶部中心
       const toX = toLayer.x + toLayer.width / 2;
       const toY = toLayer.y;
+      const trunkX = toX;
 
       // 计算分叉点（在源层和目标层之间的中间位置）
       const forkY = (fromY + toY) / 2;
@@ -2192,6 +2220,17 @@ function calculateParallelColumnsLayout(network, layout) {
       const totalWidth = (labels.length - 1) * branchGap;
       const startX = toX - totalWidth / 2;
 
+      // Shared trunk from source to fork point; draw it once to avoid overlapping paths.
+      layout.forkConnections.push({
+        from: forkConn.from,
+        to: forkConn.to,
+        points: [
+          { x: trunkX, y: fromY },
+          { x: trunkX, y: forkY }
+        ],
+        isSharedLine: true
+      });
+
       // 创建分叉连接
       labels.forEach((label, index) => {
         const branchX = startX + index * branchGap;
@@ -2199,15 +2238,20 @@ function calculateParallelColumnsLayout(network, layout) {
         layout.forkConnections.push({
           from: forkConn.from,
           to: forkConn.to,
-          points: [
-            { x: fromX, y: fromY },
-            { x: fromX, y: forkY },
-            { x: branchX, y: forkY },
-            { x: branchX, y: toY }
-          ],
+          points: Math.abs(branchX - trunkX) < 0.001
+            ? [
+                { x: trunkX, y: forkY },
+                { x: branchX, y: toY }
+              ]
+            : [
+                { x: trunkX, y: forkY },
+                { x: branchX, y: forkY },
+                { x: branchX, y: toY }
+              ],
           label: label,
           labelX: branchX,
-          labelY: forkY - branchGap / 2
+          labelY: forkY - branchGap / 2,
+          isSharedLine: false
         });
       });
     });

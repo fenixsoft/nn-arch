@@ -398,6 +398,115 @@ layers_after_blocks:
   assertEqual(block.repeatMarker.count, 6, 'Transformer block 重复次数为 6');
 });
 
+test('fork connections use one shared trunk', function() {
+  const yaml = `name: ForkNet
+layout: parallel-columns
+
+columns:
+  - name: Encoder
+    layers:
+      - {id: enc_input, name: Input Embedding, type: embedding}
+    blocks:
+      - name: Encoder Block
+        type: stack
+        repeat: 1
+        layers:
+          - {id: enc_mha, name: Attention, type: attention}
+
+fork_connections:
+  - {from: enc_input, to: enc_mha, labels: [Q, K, V]}`;
+
+  const network = parseNetworkYaml(yaml);
+  const layout = calculateLayout(network);
+  const forkConnections = layout.forkConnections || [];
+  const sharedLines = forkConnections.filter(conn => conn.isSharedLine);
+  const branchLines = forkConnections.filter(conn => !conn.isSharedLine);
+  const sourceLayer = layout.layers.find(l => l.data.id === 'enc_input');
+  const targetLayer = layout.layers.find(l => l.data.id === 'enc_mha');
+  const targetCenterX = targetLayer.x + targetLayer.width / 2;
+  const sourceCenterX = sourceLayer.x + sourceLayer.width / 2;
+  const skippedSequential = layout.connections.some(conn =>
+    conn.from === 'Input Embedding' && conn.to === 'Attention'
+  );
+
+  assertEqual(sharedLines.length, 1, 'QKV fork should have one shared trunk');
+  assertEqual(branchLines.length, 3, 'QKV fork should have three branch paths');
+  assertEqual(sharedLines[0].points.length, 2, 'Shared trunk should contain only the source-to-fork segment');
+  assertEqual(sharedLines[0].points[0].x, targetCenterX, 'Shared trunk should align with target center');
+  assertEqual(sharedLines[0].points[0].x, sourceCenterX, 'Shared trunk should align with source center when stack block padding is balanced');
+  assertEqual(skippedSequential, false, 'Sequential connection should be skipped when fork handles the edge');
+  branchLines.forEach(conn => {
+    assertEqual(conn.points[0].x, sharedLines[0].points[1].x, 'Branch should start at fork x');
+    assertEqual(conn.points[0].y, sharedLines[0].points[1].y, 'Branch should start at fork y');
+  });
+});
+
+test('Transformer Architecture fork lines align with center arrows', function() {
+  const network = parseNetworkYaml(getTemplate('transformer_full'));
+  const layout = calculateLayout(network);
+  const encInput = layout.layers.find(l => l.data.id === 'enc_input');
+  const encMha = layout.layers.find(l => l.data.id === 'enc_mha');
+  const decInput = layout.layers.find(l => l.data.id === 'dec_input');
+  const decMha = layout.layers.find(l => l.data.id === 'dec_masked_mha');
+  const encCenterX = encMha.x + encMha.width / 2;
+  const decCenterX = decMha.x + decMha.width / 2;
+  const encSourceX = encInput.x + encInput.width / 2;
+  const decSourceX = decInput.x + decInput.width / 2;
+  const sharedLines = (layout.forkConnections || []).filter(conn => conn.isSharedLine);
+  const encShared = sharedLines.find(conn => conn.from === 'enc_input');
+  const decShared = sharedLines.find(conn => conn.from === 'dec_input');
+  const topSequential = layout.connections.filter(conn =>
+    (conn.from === 'Input Embedding' && conn.to === 'Multi-Head Attention') ||
+    (conn.from === 'Output Embedding' && conn.to === 'Masked Multi-Head Attention')
+  );
+
+  assertEqual(topSequential.length, 0, 'Template should not emit duplicate top sequential lines');
+  assertEqual(encShared.points[0].x, encCenterX, 'Encoder fork trunk should align with center K arrow');
+  assertEqual(decShared.points[0].x, decCenterX, 'Decoder fork trunk should align with center K arrow');
+  assertEqual(encShared.points[0].x, encSourceX, 'Encoder fork trunk should align with source and target centers');
+  assertEqual(decShared.points[0].x, decSourceX, 'Decoder fork trunk should align with source and target centers');
+});
+
+test('Transformer Architecture stack blocks have equal horizontal padding', function() {
+  const network = parseNetworkYaml(getTemplate('transformer_full'));
+  const layout = calculateLayout(network);
+  const stackBlocks = layout.blocks.filter(block =>
+    block.name === 'Encoder Block' || block.name === 'Decoder Block'
+  );
+
+  assertEqual(stackBlocks.length, 2, 'Template should have encoder and decoder stack blocks');
+  stackBlocks.forEach(block => {
+    const firstLayerTop = Math.min(...block.layers.map(layer => layer.y));
+    const lastLayerBottom = Math.max(...block.layers.map(layer => layer.y + layer.height));
+    const topPadding = firstLayerTop - block.y;
+    const bottomPadding = block.y + block.height - lastLayerBottom;
+
+    assertEqual(block.showTitle, false, `${block.name} title should be hidden`);
+    assertEqual(topPadding, bottomPadding, `${block.name} should have equal vertical padding`);
+    block.layers.forEach(layer => {
+      const leftPadding = layer.x - block.x;
+      const rightPadding = block.x + block.width - (layer.x + layer.width);
+      assertEqual(leftPadding, rightPadding, `${block.name} layer should have equal horizontal padding`);
+    });
+  });
+});
+
+test('Transformer Architecture section titles are vertically centered above first element', function() {
+  const network = parseNetworkYaml(getTemplate('transformer_full'));
+  const layout = calculateLayout(network);
+
+  layout.sections.forEach(section => {
+    const firstElementTop = Math.min(
+      ...layout.layers.filter(layer => layer.columnIndex === section.columnIndex).map(layer => layer.y),
+      ...layout.blocks.filter(block => block.layers.some(layer => layer.columnIndex === section.columnIndex)).map(block => block.y)
+    );
+    const expectedTitleY = (section.y + firstElementTop) / 2;
+
+    assertEqual(section.titleY, expectedTitleY, `${section.name} title should be centered between section top and first element`);
+    assertEqual(section.titleBaseline, 'middle', `${section.name} title should use middle baseline`);
+  });
+});
+
 // === Block Layout 测试 ===
 
 test('计算 parallel block 布局', function() {
