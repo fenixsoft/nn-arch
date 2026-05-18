@@ -9,58 +9,58 @@
     </marker>
   </defs>
 <rect width="834" height="1573.4" fill="#ffffff"/>
-<text x="417" y="54" text-anchor="middle" font-size="36" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Transformer Architecture</text>
+<text x="417" y="54" text-anchor="middle" font-size="36" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Transformer 完整架构图</text>
 <rect x="63" y="81" width="324" height="874.4" fill="none" stroke="#b8d8e8" stroke-width="3.6" stroke-dasharray="9,9" rx="18"/>
 <text x="225" y="108.7" text-anchor="middle" dominant-baseline="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#5a7d9a">Encoder</text>
 <rect x="447" y="81" width="324" height="1486.4" fill="none" stroke="#b8e8c8" stroke-width="3.6" stroke-dasharray="9,9" rx="18"/>
 <text x="609" y="108.7" text-anchor="middle" dominant-baseline="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#5a7d9a">Decoder</text>
 
 <rect x="117" y="136.4" width="216" height="126" fill="#f8f8e8" stroke="#d9a55b" stroke-width="3.6" rx="14.4"/>
-<text x="225" y="173.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Input Embedding</text><text x="225" y="207.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">+Positional Encoding</text>
+<text x="225" y="173.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">输入 Embedding</text><text x="225" y="207.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">+位置编码</text>
 
 <rect x="501" y="136.4" width="216" height="126" fill="#f8f8e8" stroke="#d9a55b" stroke-width="3.6" rx="14.4"/>
-<text x="609" y="173.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Output Embedding</text><text x="609" y="207.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">+Positional Encoding</text>
+<text x="609" y="173.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">输出 Embedding</text><text x="609" y="207.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">+位置编码</text>
 
 <rect x="501" y="1261.4" width="216" height="126" fill="#fff8f0" stroke="#f0a559" stroke-width="3.6" rx="14.4"/>
-<text x="609" y="1298.6000000000001" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Linear</text>
+<text x="609" y="1298.6000000000001" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Linear</text><text x="609" y="1332.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">线性词表映射</text>
 
 <rect x="501" y="1414.4" width="216" height="126" fill="#f8f0e8" stroke="#d9b559" stroke-width="3.6" rx="14.4"/>
-<text x="609" y="1451.6000000000001" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Softmax</text>
+<text x="609" y="1451.6000000000001" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Softmax</text><text x="609" y="1485.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">归一化</text>
 <rect x="90" y="289.4" width="270" height="639" fill="#f8f8e8" stroke="#d9b559" stroke-width="3.6" stroke-dasharray="9,9" rx="14.4"/>
 
 <rect x="117" y="316.4" width="216" height="126" fill="#e8f0f8" stroke="#5990d9" stroke-width="3.6" rx="14.4"/>
-<text x="225" y="353.59999999999997" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Multi-Head Attention</text><text x="225" y="387.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">heads=N/A</text>
+<text x="225" y="353.59999999999997" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Attention</text><text x="225" y="387.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">多头注意力</text>
 
 <rect x="117" y="469.4" width="216" height="126" fill="#f8e8f8" stroke="#d959f0" stroke-width="3.6" rx="14.4"/>
-<text x="225" y="506.59999999999997" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Add &amp; Norm</text>
+<text x="225" y="506.59999999999997" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Add &amp; Norm</text><text x="225" y="540.1999999999999" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">残差连接及层归一化</text>
 
 <rect x="117" y="622.4" width="216" height="126" fill="#fff8f0" stroke="#f0a559" stroke-width="3.6" rx="14.4"/>
-<text x="225" y="659.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Feed Forward</text>
+<text x="225" y="659.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">FFN</text><text x="225" y="693.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">前馈网络</text>
 
 <rect x="117" y="775.4" width="216" height="126" fill="#f8e8f8" stroke="#d959f0" stroke-width="3.6" rx="14.4"/>
-<text x="225" y="812.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Add &amp; Norm</text>
-<rect x="474" y="289.4" width="270" height="945.0000000000001" fill="#f8f8e8" stroke="#d9b559" stroke-width="3.6" stroke-dasharray="9,9" rx="14.4"/>
-
-<rect x="501" y="316.4" width="216" height="126" fill="#e8f0f8" stroke="#5990d9" stroke-width="3.6" rx="14.4"/>
-<text x="609" y="353.59999999999997" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Masked Multi-Head Attention</text><text x="609" y="387.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">heads=N/A</text>
-
-<rect x="501" y="469.4" width="216" height="126" fill="#f8e8f8" stroke="#d959f0" stroke-width="3.6" rx="14.4"/>
-<text x="609" y="506.59999999999997" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Add &amp; Norm</text>
-
-<rect x="501" y="622.4" width="216" height="126" fill="#e8f0f8" stroke="#5990d9" stroke-width="3.6" rx="14.4"/>
-<text x="609" y="659.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Multi-Head Attention</text><text x="609" y="693.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">heads=N/A</text>
-
-<rect x="501" y="775.4" width="216" height="126" fill="#f8e8f8" stroke="#d959f0" stroke-width="3.6" rx="14.4"/>
-<text x="609" y="812.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Add &amp; Norm</text>
-
-<rect x="501" y="928.4" width="216" height="126" fill="#fff8f0" stroke="#f0a559" stroke-width="3.6" rx="14.4"/>
-<text x="609" y="965.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Feed Forward</text>
-
-<rect x="501" y="1081.4" width="216" height="126" fill="#f8e8f8" stroke="#d959f0" stroke-width="3.6" rx="14.4"/>
-<text x="609" y="1118.6000000000001" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Add &amp; Norm</text>
+<text x="225" y="812.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Add &amp; Norm</text><text x="225" y="846.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">残差连接及层归一化</text>
 <path d="M225 442.4 L225 469.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
 <path d="M225 595.4 L225 622.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
 <path d="M225 748.4 L225 775.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
+<rect x="474" y="289.4" width="270" height="945.0000000000001" fill="#f8f8e8" stroke="#d9b559" stroke-width="3.6" stroke-dasharray="9,9" rx="14.4"/>
+
+<rect x="501" y="316.4" width="216" height="126" fill="#e8f0f8" stroke="#5990d9" stroke-width="3.6" rx="14.4"/>
+<text x="609" y="353.59999999999997" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Attention</text><text x="609" y="387.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">因果掩码注意力</text>
+
+<rect x="501" y="469.4" width="216" height="126" fill="#f8e8f8" stroke="#d959f0" stroke-width="3.6" rx="14.4"/>
+<text x="609" y="506.59999999999997" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Add &amp; Norm</text><text x="609" y="540.1999999999999" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">残差连接及层归一化</text>
+
+<rect x="501" y="622.4" width="216" height="126" fill="#e8f0f8" stroke="#5990d9" stroke-width="3.6" rx="14.4"/>
+<text x="609" y="659.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Attention</text><text x="609" y="693.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">交叉注意力</text>
+
+<rect x="501" y="775.4" width="216" height="126" fill="#f8e8f8" stroke="#d959f0" stroke-width="3.6" rx="14.4"/>
+<text x="609" y="812.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Add &amp; Norm</text><text x="609" y="846.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">残差连接及层归一化</text>
+
+<rect x="501" y="928.4" width="216" height="126" fill="#fff8f0" stroke="#f0a559" stroke-width="3.6" rx="14.4"/>
+<text x="609" y="965.6" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">FFN</text><text x="609" y="999.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">前馈网络</text>
+
+<rect x="501" y="1081.4" width="216" height="126" fill="#f8e8f8" stroke="#d959f0" stroke-width="3.6" rx="14.4"/>
+<text x="609" y="1118.6000000000001" text-anchor="middle" font-size="25.2" font-weight="bold" font-family="Arial, sans-serif" fill="#333">Add &amp; Norm</text><text x="609" y="1152.2" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">残差连接及层归一化</text>
 <path d="M609 442.4 L609 469.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
 <path d="M609 595.4 L609 622.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
 <path d="M609 748.4 L609 775.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
@@ -69,7 +69,7 @@
 <path d="M609 1207.4 L609 1261.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
 <path d="M609 1387.4 L609 1414.4" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
 <path d="M333 838.4 L417 838.4" stroke="#999" stroke-width="2.7" fill="none"/>
-<text x="375" y="816.8" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">Encoder Output</text>
+<text x="375" y="816.8" text-anchor="middle" font-size="21.6" font-family="Arial, sans-serif" fill="#666">编码</text>
 <path d="M417 838.4 L417 671.9 L501 671.9" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>
 <text x="395.4" y="671.9" text-anchor="middle" font-size="21.6" font-weight="bold" font-family="Arial, sans-serif" fill="#666">K</text>
 <path d="M417 838.4 L417 698.9 L501 698.9" stroke="#999" stroke-width="2.7" fill="none" marker-end="url(#arrowhead)"/>

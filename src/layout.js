@@ -2048,20 +2048,18 @@ function calculateParallelColumnsLayout(network, layout) {
   // 使用 y 坐标来区分同名层，避免重复
   const connectionSet = new Set();
 
-  // 先添加 block 内部连接（它们由 block 自己管理）
+  // block 内部连接由 generateBlock 渲染，不添加到 layout.connections
+  // 但需要记录到 connectionSet 以避免重复
   columnBlocks.forEach((blocks, columnIndex) => {
     blocks.forEach(block => {
       if (block.connections && block.connections.length > 0) {
         block.connections.forEach(conn => {
-          // 使用坐标来区分同名层
           const fromLayer = block.layers.find(l => l.name === conn.from);
           const toLayer = block.layers.find(l => l.name === conn.to);
           if (!fromLayer || !toLayer) return;
 
           const connKey = `${conn.from}@${fromLayer.y}->${conn.to}@${toLayer.y}`;
-          if (connectionSet.has(connKey)) return;
           connectionSet.add(connKey);
-          layout.connections.push(conn);
         });
       }
     });
